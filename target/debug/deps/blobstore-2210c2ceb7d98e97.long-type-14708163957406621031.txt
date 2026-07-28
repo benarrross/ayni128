@@ -1,0 +1,1 @@
+for<'a> &BlobDescriptor<'_>: Serialize<Strategy<Serializer<AlignedVec, ArenaHandle<'a>, Share>, rkyv::rancor::Error>>
