@@ -6,13 +6,13 @@ use std::sync::{Arc, RwLock};
 use crate::BlobId;
 use crate::sortedarray::*;
 
+use super::bplustree::*;
 use super::node::*;
-use super::*;
 use super::rangeiterator::{*};
 
 
 pub struct View<'a, const K: usize> {
-    based_on: &'a SortedList<'a, K>,
+    based_on: &'a BPlusTree<'a, K>,
     root: LoadedNodeRef<K>, // Assumed to be mutable
     puts: SortedArray<u128>,
     deletes: SortedArray<u128>
@@ -21,7 +21,7 @@ pub struct View<'a, const K: usize> {
 
 impl<'a, const K: usize> View<'a, K> {
 
-    pub fn new(based_on: &'a SortedList<'a, K>, root_link: &NodeLink<K>) -> Self {
+    pub fn new(based_on: &'a BPlusTree<'a, K>, root_link: &NodeLink<K>) -> Self {
 
         let root = match root_link {
             NodeLink::Loaded(node) => node,

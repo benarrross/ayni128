@@ -3,10 +3,9 @@ use std::io::Write;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
-use crate::bplustree::node::NodeLink::Loaded;
 use crate::{blobstore::*, sortedarray::*};
 
-use super::sortedlist::*;
+use super::bplustree::*;
 
 
 // Refcounted pointer to a node that is loaded into memory

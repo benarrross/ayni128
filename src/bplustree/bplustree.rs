@@ -12,14 +12,14 @@ use super::node::*;
 use super::View;
 
 
-pub struct SortedList<'a, const K: usize> {
+pub struct BPlusTree<'a, const K: usize> {
     root_id: BlobId,
     blobs: HashMap<BlobId, LoadedNodeRef<K>>,
     backing_store: &'a mut BlobStore<'a>
 }
 
 
-impl <'a, const K: usize> SortedList<'a, K> {
+impl <'a, const K: usize> BPlusTree<'a, K> {
 
     pub fn new(backing_store: &'a mut BlobStore<'a>) -> Self {
 
@@ -29,7 +29,7 @@ impl <'a, const K: usize> SortedList<'a, K> {
         let mut blobs : HashMap<BlobId, LoadedNodeRef<K>> = HashMap::new();
         blobs.insert(root_id, Arc::new(RwLock::new(root_node)));
 
-        SortedList { root_id, blobs, backing_store }
+        BPlusTree { root_id, blobs, backing_store }
     }
 
 

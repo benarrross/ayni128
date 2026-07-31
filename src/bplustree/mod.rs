@@ -1,9 +1,9 @@
 mod node;
 mod rangeiterator;
-mod sortedlist;
+mod bplustree;
 mod view;
 
-pub use sortedlist::*;
+pub use bplustree::*;
 pub use view::View;
 
 mod tests;

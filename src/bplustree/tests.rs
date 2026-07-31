@@ -1,14 +1,14 @@
 #[cfg(test)]
 use std::io::Cursor;
 use crate::blobstore::*;
-use super::SortedList;
+use super::BPlusTree;
 
 
 #[test]
 fn create_empty() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = SortedList::<4>::new(&mut blobs);
+    let mut list = BPlusTree::<4>::new(&mut blobs);
 
     //list.put(32);
 }
@@ -18,7 +18,7 @@ fn create_empty() {
 fn enum_empty() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = SortedList::<4>::new(&mut blobs);
+    let mut list = BPlusTree::<4>::new(&mut blobs);
 
     let mut view = list.get_view();
 
@@ -33,7 +33,7 @@ fn enum_empty() {
 fn insert_one() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = SortedList::<4>::new(&mut blobs);
+    let mut list = BPlusTree::<4>::new(&mut blobs);
 
     // Insert 99 in a view (but don't commit it yet)
     let mut view = list.get_view();
@@ -59,7 +59,7 @@ fn insert_one() {
 fn insert_several() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = SortedList::<4>::new(&mut blobs);
+    let mut list = BPlusTree::<4>::new(&mut blobs);
 
     // Insert 99 in a view (but don't commit it yet)
     let mut view = list.get_view();

@@ -5,10 +5,9 @@ use std::iter::{*};
 use std::sync::{Arc, RwLock};
 use std::rc::Rc;
 
-use crate::bplustree::{SortedList};
 use crate::BlobId;
 
-use super::sortedlist::*;
+use super::bplustree::*;
 use super::view::*;
 use super::node::*;
 
