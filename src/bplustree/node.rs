@@ -2,14 +2,33 @@
 use std::io::Write;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
+use std::mem;
 
+use crate::bplustree::node::SplitResult::NoSplit;
 use crate::{blobstore::*, sortedarray::*};
 
 use super::bplustree::*;
 
 
 // Refcounted pointer to a node that is loaded into memory
-pub type LoadedNodeRef<const K:usize> = Arc<RwLock<Node<K>>>;
+#[derive(Debug, Clone)]
+pub struct NodeHandle<const K: usize>(Arc<RwLock<Node<K>>>);
+
+
+impl<const K: usize> NodeHandle<K> {
+    
+    pub fn new(inner: Node<K>) -> Self {
+        NodeHandle(Arc::new(RwLock::new(inner)))
+    }
+
+    pub fn read_lock(&self) -> std::sync::RwLockReadGuard<'_, Node<K>> {
+        self.0.read().unwrap()
+    }
+
+    pub fn write_lock(&mut self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
+        self.0.write().unwrap()
+    }
+}
 
 
 // Node that may or may not be loaded into memory yet
@@ -17,16 +36,23 @@ pub type LoadedNodeRef<const K:usize> = Arc<RwLock<Node<K>>>;
 pub enum NodeLink<const K: usize> {
     Empty,
     Unloaded(BlobId),
-    Loaded(LoadedNodeRef<K>),
-    Mutable(LoadedNodeRef<K>)
+    Loaded(NodeHandle<K>),
+    Dirty(NodeHandle<K>)     // NYI do we need this?
+}
+
+
+// NYI replace this with std Option?
+pub enum SplitResult<const K:usize> {
+    Split(NodeHandle<K>),
+    NoSplit
 }
 
 
 #[derive(Debug, Clone)]
 pub struct Node<const K: usize> {
     pub values : SortedArray<u128>,
-    children: Option<Vec<NodeLink<K>>>,
-    next : NodeLink<K>
+    pub children: Option<Vec<NodeLink<K>>>,
+    pub next : NodeLink<K>
 }
 
 
@@ -38,6 +64,14 @@ impl<const K: usize> Node<K> {
             children: None,
             next: NodeLink::Empty }
     }
+
+
+    pub fn new_branch(values: Vec<u128>, children: Vec<NodeLink<K>>, next: NodeLink<K>) -> Self {
+        Node { 
+            values: SortedArray::from_values(values),
+            children: Some(children),
+            next: next }
+    }   
 
 
     pub fn store(&self, backing_store: &mut BlobStore) -> BlobId {
@@ -72,15 +106,62 @@ impl<const K: usize> Node<K> {
     pub fn is_leaf(&self) -> bool { self.children.is_none() }
 
 
-    pub fn put(&mut self, value : u128) {
+    fn put_core(&mut self, value : u128) -> SplitResult<K> {
 
         if self.is_leaf() {
             self.values.insert(value);
+
+            if (self.values.len() > K) {
+                let split_index = self.values.len() / 2;
+                let right_values = self.values.split_off(split_index);
+                let new_node = Node {
+                    values: right_values,
+                    children: None,
+                    next: self.next.clone(),
+                };
+                SplitResult::Split(NodeHandle::new(new_node))
+            }
+            else {
+                SplitResult::NoSplit
+            }
         }
         else {
+            // NYI binary search values to see which child it should go in. Then handle the child
+            // splitting.
             unimplemented!();
         }
     }
+
+
+    pub fn put(hnode: &mut NodeHandle<K>, value: u128) -> Option<NodeHandle<K>> {
+
+        // Take a write lock on the node
+        let original_hnode = &hnode.clone();
+        let mut mutable_node = &mut hnode.write_lock(); // NYI use get_mutable_node here
+       
+        // Tell the node to insert the value. If it splits, create a new root with the two nodes as children.
+        let split_result = mutable_node.put_core(value);
+        match &split_result {
+            SplitResult::Split(right_hnode) => {
+
+                // Update the node we put into to have the new right node as its next link. But store the 
+                // old next value so we can put it in the new right node.
+                let old_next = mem::replace(&mut mutable_node.next, NodeLink::Loaded(right_hnode.clone()));
+
+                // Make a new parent node that has the old node on its left and the new node on its right
+                let right_node = &*right_hnode.read_lock();
+                Some(NodeHandle::new(Node::new_branch(
+                    vec![right_node.values[0]],
+                    vec![
+                        NodeLink::Loaded(original_hnode.clone()),
+                        NodeLink::Loaded(right_hnode.clone()) 
+                    ],
+                    old_next)))
+            },
+            SplitResult::NoSplit => { Option::None }
+        }
+    }
+
 
     pub fn get(&self, value : u128) -> u128 {
         unimplemented!();

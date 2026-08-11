@@ -14,7 +14,7 @@ use super::node::*;
 
 pub struct RangeCollection<'a, const K: usize> {
     based_on: &'a View<'a, K>,
-    root_node: LoadedNodeRef<K>,
+    root_node: NodeHandle<K>,
     min: u128,
     mac: u128
 }
@@ -22,7 +22,7 @@ pub struct RangeCollection<'a, const K: usize> {
 
 impl<'a, const K: usize> RangeCollection<'a,  K> {
 
-    pub fn new(based_on: &'a View<'a, K>, root_node: LoadedNodeRef<K>, min: u128, mac: u128) -> Self {
+    pub fn new(based_on: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         RangeCollection { 
             based_on, 
             root_node: root_node, 
@@ -41,16 +41,16 @@ impl<'a, const K: usize> IntoIterator for RangeCollection<'a, K> {
 
 pub struct RangeIterator<'a, const K: usize> {
     based_on: &'a View<'a, K>,
-    root_node: LoadedNodeRef<K>,
+    root_node: NodeHandle<K>,
     min: u128,
     mac: u128,
-    current_node: Option<LoadedNodeRef<K>>,
+    current_node: Option<NodeHandle<K>>,
     index: usize
 }
 
 impl<'a, const K: usize> RangeIterator<'a,  K> {
 
-    pub fn new(based_on: &'a View<'a, K>, root_node: LoadedNodeRef<K>, min: u128, mac: u128) -> Self {
+    pub fn new(based_on: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         RangeIterator { 
             based_on, 
             root_node: root_node.clone(), 
@@ -65,9 +65,9 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
 
         self.current_node = Option::Some(self.root_node.clone());
         let nodelink = self.current_node.as_ref().map(|nodelink| nodelink);
-        let node = Option::expect(nodelink, "foo").read().unwrap();
+        let node = Option::expect(nodelink, "foo").read_lock();
         
-        self.index = node.values.find(self.min);
+        self.index = node.values.find_index(self.min);
         
         if self.index < node.values.len() {
             Option::Some(node.values[self.index])
@@ -80,7 +80,7 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
     fn find_next(&mut self) -> Option<u128> {
 
         let nodelink = self.current_node.as_ref().map(|nodelink| nodelink);
-        let node = Option::expect(nodelink, "foo").read().unwrap();
+        let node = Option::expect(nodelink, "foo").read_lock();
 
         self.index = self.index + 1;        
         if self.index < node.values.len() {

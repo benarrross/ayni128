@@ -19,9 +19,9 @@ fn insert_inorder() {
     a.insert(1000);
 
     assert_eq!(3, a.len());
-    assert_eq!(0, a.find(99));
-    assert_eq!(1, a.find(100));
-    assert_eq!(2, a.find(1000));
+    assert_eq!(0, a.find_index(99));
+    assert_eq!(1, a.find_index(100));
+    assert_eq!(2, a.find_index(1000));
 }
 
 
@@ -36,10 +36,10 @@ fn insert_outoforder() {
     a.insert(50);
 
     assert_eq!(4, a.len());
-    assert_eq!(0, a.find(16));
-    assert_eq!(1, a.find(32));
-    assert_eq!(2, a.find(50));
-    assert_eq!(3, a.find(99));
+    assert_eq!(0, a.find_index(16));
+    assert_eq!(1, a.find_index(32));
+    assert_eq!(2, a.find_index(50));
+    assert_eq!(3, a.find_index(99));
 }
 
 
@@ -54,9 +54,9 @@ fn find_missing() {
     a.insert(16);
 
     assert_eq!(4, a.len());
-    assert_eq!(0, a.find(15));
-    assert_eq!(1, a.find(31));
-    assert_eq!(2, a.find(49));
-    assert_eq!(3, a.find(90));
-    assert_eq!(4, a.find(100));
+    assert_eq!(0, a.find_index(15));
+    assert_eq!(1, a.find_index(31));
+    assert_eq!(2, a.find_index(49));
+    assert_eq!(3, a.find_index(90));
+    assert_eq!(4, a.find_index(100));
 }

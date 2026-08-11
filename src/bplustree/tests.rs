@@ -1,5 +1,8 @@
 #[cfg(test)]
 use std::io::Cursor;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use crate::blobstore::*;
 use super::BPlusTree;
 
@@ -55,13 +58,13 @@ fn insert_one() {
     // }
 }
 
+
 #[test]
 fn insert_several() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
     let mut list = BPlusTree::<4>::new(&mut blobs);
 
-    // Insert 99 in a view (but don't commit it yet)
     let mut view = list.get_view();
     view.put(99);
     view.put(10);
@@ -74,6 +77,33 @@ fn insert_several() {
     assert_eq!(99_u128, iter.next().unwrap());
     assert_eq!(999_u128, iter.next().unwrap());
     assert!(iter.next().is_none());
+
+    // Commit and ensure we can see 99
+    // list.commit(view);
+    // for item in list.get_view().iter(0, u128::MAX) {
+    //     assert_eq!(99, item);
+    // }
+}
+
+
+#[test]
+fn insert_many() {
+    const K:usize = 4;
+    let mut memory_buffer = MemoryStream::new();
+    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut list = BPlusTree::<K>::new(&mut blobs);
+
+    // Insert enough nodes that we need to do three splits
+    let mut view = list.get_view();
+    for value in 0..K*4 {
+        view.put(value as u128);
+
+        let mut iter = view.iter(0, K as u128).into_iter();
+        for value in 0..K*4 {
+            assert_eq!(value as u128, iter.next().unwrap());
+        }
+        assert!(iter.next().is_none());
+    }
 
     // Commit and ensure we can see 99
     // list.commit(view);

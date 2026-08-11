@@ -14,7 +14,7 @@ use super::View;
 
 pub struct BPlusTree<'a, const K: usize> {
     root_id: BlobId,
-    blobs: HashMap<BlobId, LoadedNodeRef<K>>,
+    blobs: HashMap<BlobId, NodeHandle<K>>,
     backing_store: &'a mut BlobStore<'a>
 }
 
@@ -26,8 +26,8 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
         // Make a new, empty node for our root, store it, and add it to  our blobs map
         let root_node = Node::<K>::new_leaf();
         let root_id = root_node.store(backing_store);
-        let mut blobs : HashMap<BlobId, LoadedNodeRef<K>> = HashMap::new();
-        blobs.insert(root_id, Arc::new(RwLock::new(root_node)));
+        let mut blobs : HashMap<BlobId, NodeHandle<K>> = HashMap::new();
+        blobs.insert(root_id, NodeHandle::new(root_node));
 
         BPlusTree { root_id, blobs, backing_store }
     }
