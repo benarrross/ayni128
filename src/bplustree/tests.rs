@@ -94,15 +94,20 @@ fn insert_many() {
     let mut list = BPlusTree::<K>::new(&mut blobs);
 
     // Insert enough nodes that we need to do three splits
-    let mut view = list.get_view();
+    let view = list.get_view();
+    let view_before = list.get_view();
+    let mut inserted_count = 0;
     for value in 0..K*4 {
         view.put(value as u128);
+        inserted_count += 1;
 
-        let mut iter = view.iter(0, K as u128).into_iter();
-        for value in 0..K*4 {
+        let mut iter = view.iter(0, u128::MAX).into_iter();
+        for value in 0..inserted_count {
             assert_eq!(value as u128, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
+
+        assert_eq!(0, view_before.iter(0, u128::MAX).into_iter().count());
     }
 
     // Commit and ensure we can see 99

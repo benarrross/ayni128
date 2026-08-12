@@ -37,7 +37,7 @@ pub enum NodeLink<const K: usize> {
     Empty,
     Unloaded(BlobId),
     Loaded(NodeHandle<K>),
-    Dirty(NodeHandle<K>)     // NYI do we need this?
+    Edited(NodeHandle<K>)
 }
 
 
@@ -50,6 +50,7 @@ pub enum SplitResult<const K:usize> {
 
 #[derive(Debug, Clone)]
 pub struct Node<const K: usize> {
+    pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<NodeLink<K>>>,
     pub next : NodeLink<K>
@@ -59,7 +60,8 @@ pub struct Node<const K: usize> {
 impl<const K: usize> Node<K> {  
 
     pub fn new_leaf() -> Self {
-        Node { 
+        Node {
+            id: None,
             values: SortedArray::new(),
             children: None,
             next: NodeLink::Empty }
@@ -68,6 +70,7 @@ impl<const K: usize> Node<K> {
 
     pub fn new_branch(values: Vec<u128>, children: Vec<NodeLink<K>>, next: NodeLink<K>) -> Self {
         Node { 
+            id: None,
             values: SortedArray::from_values(values),
             children: Some(children),
             next: next }
@@ -114,7 +117,8 @@ impl<const K: usize> Node<K> {
             if (self.values.len() > K) {
                 let split_index = self.values.len() / 2;
                 let right_values = self.values.split_off(split_index);
-                let new_node = Node {
+                let new_node = Node {   // NYI ask the bplustree for a new node instead
+                    id: None,
                     values: right_values,
                     children: None,
                     next: self.next.clone(),
@@ -146,15 +150,15 @@ impl<const K: usize> Node<K> {
 
                 // Update the node we put into to have the new right node as its next link. But store the 
                 // old next value so we can put it in the new right node.
-                let old_next = mem::replace(&mut mutable_node.next, NodeLink::Loaded(right_hnode.clone()));
+                let old_next = mem::replace(&mut mutable_node.next, NodeLink::Edited(right_hnode.clone()));
 
                 // Make a new parent node that has the old node on its left and the new node on its right
                 let right_node = &*right_hnode.read_lock();
                 Some(NodeHandle::new(Node::new_branch(
                     vec![right_node.values[0]],
                     vec![
-                        NodeLink::Loaded(original_hnode.clone()),
-                        NodeLink::Loaded(right_hnode.clone()) 
+                        NodeLink::Edited(original_hnode.clone()),
+                        NodeLink::Edited(right_hnode.clone()) 
                     ],
                     old_next)))
             },

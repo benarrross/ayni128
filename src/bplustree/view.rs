@@ -15,7 +15,7 @@ use super::rangeiterator::{*};
 
 pub struct View<'a, const K: usize> {
     based_on: &'a BPlusTree<'a, K>,
-    root_hnode: RefCell<NodeHandle<K>>,
+    root_node_link: RefCell<NodeLink<K>>,
     puts: RefCell<SortedArray<u128>>,
     deletes: RefCell<SortedArray<u128>>
 }
@@ -23,20 +23,11 @@ pub struct View<'a, const K: usize> {
 
 impl<'a, const K: usize> View<'a, K> {
 
-    pub fn new(based_on: &'a BPlusTree<'a, K>, root_link: &NodeLink<K>) -> Self {
-
-        let root = match root_link {
-            NodeLink::Loaded(node) => node,
-            NodeLink::Unloaded(id) => unimplemented!(),
-            NodeLink::Dirty(_) => panic!("Root node should not be mutable"),
-            NodeLink::Empty => panic!("Root node should not be empty"),
-        };
-        let based_on_root = &*root.read_lock();
-        let mut mutable_root = based_on_root.clone();
+    pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
 
         View { 
             based_on, 
-            root_hnode: RefCell::new(NodeHandle::new(mutable_root)),
+            root_node_link: RefCell::new(root_node_link.clone()),
             puts: RefCell::new(SortedArray::new()),
             deletes: RefCell::new(SortedArray::new())
         }
@@ -52,9 +43,10 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let new_root = Node::put(&mut self.root_hnode.borrow_mut(), value); 
-        if let Some(new_hnode_root) = new_root {
-            *self.root_hnode.borrow_mut() = new_hnode_root;
+        let mut mutable_hnode_root = self.get_mutable_hnode(&mut self.root_node_link.borrow_mut());
+        let updated_root = Node::put(& mut mutable_hnode_root, value); 
+        if let Some(new_hnode_root) = updated_root {
+            *self.root_node_link.borrow_mut() = NodeLink::Edited(new_hnode_root);
         }
     }
 
@@ -65,27 +57,50 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     pub fn get(&self, value : u128) -> u128 {
-        self.root_hnode.borrow().read_lock().get(value)
+        let root_hnode = self.get_hnode(&mut self.root_node_link.borrow_mut());
+        root_hnode.read_lock().get(value)
     }
 
 
     pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
-        RangeCollection::new(self, self.root_hnode.borrow().clone(), min, mac)
+        let root_hnode = self.get_hnode(&mut self.root_node_link.borrow_mut());
+        RangeCollection::new(self, root_hnode, min, mac)
     }   
 
 
-    fn get_mutable_node(&mut self, id: BlobId) -> &mut Node<K> {
+    fn get_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+        match node_link {
+            NodeLink::Unloaded(id) => {
+                let hnode = self.based_on.get_hnode(node_link.clone());
+                *node_link = NodeLink::Loaded(hnode.clone());
+                hnode
+            },
+            NodeLink::Loaded(hnode) => hnode.clone(),
+            NodeLink::Edited(hnode) => hnode.clone(),
+            NodeLink::Empty => panic!("NYI")
+        }
+    }
 
-        unimplemented!();
-        // match local_node {
-        //     Some(mut node) => {
-        //         let z: &mut Arc<Node<K>> = local_node.unwrap();
-        //         //let x = Arc::get_mut(node);
-        //         return z;
-        //     },
-        //     None => {}
-        // }
-        //panic!("NYI");
+    /// Gets a mutable version of the node and updates the passed in link if necesssary
+    fn get_mutable_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+
+        match node_link {
+            NodeLink::Unloaded(id) => {
+                let hnode = self.based_on.get_hnode(node_link.clone());
+                let node_copy = hnode.read_lock().clone();
+                let new_hnode = NodeHandle::new(node_copy);
+                *node_link = NodeLink::Edited(new_hnode.clone());
+                new_hnode
+            },
+            NodeLink::Loaded(hnode) => {
+                let node_copy = hnode.read_lock().clone();
+                let new_hnode = NodeHandle::new(node_copy);
+                *node_link = NodeLink::Edited(new_hnode.clone());
+                new_hnode
+            },
+            NodeLink::Edited(hnode) => hnode.clone(),
+            NodeLink::Empty => panic!("Can't make an empty node link mutable")
+        }
     }
 }
 
