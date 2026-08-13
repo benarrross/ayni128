@@ -45,6 +45,13 @@ impl<T: Copy + Ord> SortedArray<T> {
         }
     }
 
+    pub fn find_index_before(&self, value: T) -> usize {
+        match self.values.binary_search(&value) {
+            Ok(index) => index - 1,
+            Err(index) => index,
+        }
+    }
+
 
     pub fn get(&self, value: T) -> Option<T> {
         match self.values.binary_search(&value) {
