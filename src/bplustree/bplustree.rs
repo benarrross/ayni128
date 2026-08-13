@@ -24,7 +24,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
     pub fn new(backing_store: &'a mut BlobStore<'a>) -> Self {
 
         // Make a new, empty node for our root, store it, and add it to  our blobs map
-        let root_node = Node::<K>::new_leaf();
+        let root_node = Node::<K>::empty_leaf();
         let root_id = root_node.store(backing_store);
 
         // Start off with one node

@@ -97,7 +97,7 @@ fn insert_many_in_order() {
     let view = list.get_view();
     let view_before = list.get_view();
     let mut inserted_count = 0;
-    for value in 0..K*4 {
+    for value in 0..K*20 {
         view.put(value as u128);
         inserted_count += 1;
 

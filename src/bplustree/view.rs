@@ -45,7 +45,7 @@ impl<'a, const K: usize> View<'a, K> {
             node.values.find(value)
         }
         else {
-            let index = node.values.find_index_before(value) + 1;
+            let index = node.values.find_range_index(value);
             let child_hnode = self.get_child_hnode(node, index);
             self.get_from_node(&child_hnode.read_lock(), value)
         }
@@ -59,7 +59,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     pub fn put(&self, value : u128) {
 
-        // Update our list of added/deleted values
+        // Update our list of added/deleted values. This is used to commit the transaction later.
         if self.deletes.borrow().exists(value) {
             self.deletes.borrow_mut().remove(value);
         } else {
@@ -68,91 +68,82 @@ impl<'a, const K: usize> View<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode(&mut self.root_node_link.borrow_mut());
-        self.put_in_mutable_node(&mutable_root_hnode, value).
-            map(|new_root_hnode| *self.root_node_link.borrow_mut() = NodeLink::Edited(new_root_hnode));
-    }
-
-
-    pub fn put_in_mutable_node(&self, hnode: &NodeHandle<K>, value: u128) -> Option<NodeHandle<K>> {
-
-        let mut mutable_node = &mut hnode.write_lock();
-        let split_result = self.put_and_split(mutable_node, value);
-        match &split_result {
-            SplitResult::Split(right_hnode) => Some(Self::create_parent_for_split_nodes(hnode, &mut mutable_node, right_hnode.clone())),
-            SplitResult::NoSplit => Option::None
+        if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
+           *self.root_node_link.borrow_mut() = NodeLink::Edited(
+                Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
     }
 
 
-    fn create_parent_for_split_nodes(hnode:&NodeHandle<K>, mutable_node: &mut Node<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
-
-        // Fix up the next link on the old node to point to the new one we just created
-        let old_next = mem::replace(&mut mutable_node.next, NodeLink::Edited(right_hnode.clone()));
+    /// Creates a new branch node from the specified left and right nodes
+    fn create_branch_node(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
 
         // Make a new parent node that has the old node on its left and the new node on its right
         let right_node = &*right_hnode.read_lock();
-        NodeHandle::new(Node::new_branch(
-            vec![right_node.values[0]],
+        Node::new_branch(
+            SortedArray::from_values(vec![right_node.values[0]]),
             vec![
-                RefCell::new(NodeLink::Edited(hnode.clone())),
+                RefCell::new(NodeLink::Edited(left_hnode.clone())),
                 RefCell::new(NodeLink::Edited(right_hnode.clone())) 
-            ],
-            old_next))
+            ])
     }
 
 
-    fn put_and_split(&self, node: &mut Node<K>, value : u128) -> SplitResult<K> {
+    /// Splits the right half of a leaf node off, and updates the leaf node linked list.
+    fn split_leaf_node(node: &mut Node<K>) -> NodeHandle<K> {
+        
+        // Make a new right node
+        let split_index = node.values.len() / 2;
+        let right_values = node.values.split_off(split_index);
+        let new_right_hnode = Node::new_leaf(right_values, node.next.clone());
 
-        if node.is_leaf() {
-            node.values.insert(value);
+        // Link the node we just split from to the new node in the leaf node linked list
+        node.next = NodeLink::Edited(new_right_hnode.clone());
+        new_right_hnode
+    }
 
-            if (node.values.len() > K) {
-                let split_index = node.values.len() / 2;
-                let right_values = node.values.split_off(split_index);
-                let new_right_node = Node { 
-                    id: None,
-                    values: right_values,
-                    children: None,
-                    next: node.next.clone(),
-                };
-                SplitResult::Split(NodeHandle::new(new_right_node))
-            }
-            else {
+
+    /// Splits the right half of a node off into a new branch node and returns it.
+    fn split_branch_node(node: &mut Node<K>) -> NodeHandle<K> {
+        
+        let split_index = node.values.len() / 2;
+        let right_values = node.values.split_off(split_index);
+        let right_children = node.children.as_mut().unwrap().split_off(split_index);
+        Node::new_branch(right_values, right_children)
+    }
+
+
+    /// Inserts a value into a node and splits it if necessary
+    fn insert_and_split(&self, node_mut: &mut Node<K>, value : u128) -> SplitResult<K> {
+
+        if node_mut.is_leaf() {
+            node_mut.values.insert(value);
+
+            if (node_mut.values.len() > K) {
+                SplitResult::Split(Self::split_leaf_node(node_mut))
+            } else {
                 SplitResult::NoSplit
             }
         }
         else {
-            // binary search values to see which child it should go in. Then handle the child splitting.
-            // Then see if this node needs to be split as well.
-            let index = node.values.find_index_before(value) + 1;
-            let mut mutable_child_hnode = self.get_child_mutable_hnode(node, index);
-            let mut mutable_child_node = &mut mutable_child_hnode.write_lock();
+            // Find the child this should go in and ask the child to insert the value
+            let index = node_mut.values.find_range_index(value);
+            let mut mutable_child_hnode = self.get_child_mutable_hnode(node_mut, index);
 
-            let split_result = self.put_and_split(mutable_child_node, value);
-            if let SplitResult::Split(right_hnode) = split_result {
-                
-                // Insert the new node right after the one we just split
+            // Handle the child splitting (which might force us to split the current node also)
+            if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_child_hnode.write_lock(), value) {
+
                 let right_node = &*right_hnode.read_lock();
-                node.values.insert(right_node.values[0]);
-                node.children.as_mut().unwrap().insert(index + 1, RefCell::new(NodeLink::Edited(right_hnode.clone())));
+                node_mut.values.insert(right_node.values[0]);
+                node_mut.children.as_mut().unwrap().insert(index, RefCell::new(NodeLink::Edited(right_hnode.clone())));
 
-                if (node.values.len() > K) {
-                    let split_index = node.values.len() / 2;
-                    let right_values = node.values.split_off(split_index);
-                    let right_children = node.children.as_mut().unwrap().split_off(split_index + 1);
-                    let new_node = Node {   // NYI THIS IS WRONG... use the same logic as above
-                        id: None,
-                        values: right_values,
-                        children: Some(right_children),
-                        next: node.next.clone(),
-                    };
-                    SplitResult::Split(NodeHandle::new(new_node))
-                }
-                else {
+                // Now see if we need to split
+                if (node_mut.values.len() > K) {
+                    SplitResult::Split(Self::split_branch_node(node_mut))
+                } else {
                     SplitResult::NoSplit
                 }
-            }
-            else {
+            } else {
                 SplitResult::NoSplit
             }
         }

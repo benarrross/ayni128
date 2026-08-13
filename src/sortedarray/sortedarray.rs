@@ -45,9 +45,20 @@ impl<T: Copy + Ord> SortedArray<T> {
         }
     }
 
-    pub fn find_index_before(&self, value: T) -> usize {
+
+    //  
+    //  0       42
+    //  1       96
+    //
+    //  value = 31 -> 0.  Err(0)
+    //. value = 42 -> 1.  Ok(0)
+    //  value = 50 -> 1.  Err(1) 
+    //. value = 96 -> 2.  Ok(1)
+    //. value = 100 -> 2. Err(2)
+
+    pub fn find_range_index(&self, value: T) -> usize {
         match self.values.binary_search(&value) {
-            Ok(index) => index - 1,
+            Ok(index) => index + 1,
             Err(index) => index,
         }
     }

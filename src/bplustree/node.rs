@@ -62,7 +62,7 @@ pub struct Node<const K: usize> {
 
 impl<const K: usize> Node<K> {  
 
-    pub fn new_leaf() -> Self {
+    pub fn empty_leaf() -> Self {
         Node {
             id: None,
             values: SortedArray::new(),
@@ -71,12 +71,25 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: Vec<u128>, children: Vec<RefCell<NodeLink<K>>>, next: NodeLink<K>) -> Self {
-        Node { 
-            id: None,
-            values: SortedArray::from_values(values),
-            children: Some(children),
-            next: next }
+    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> NodeHandle<K> {
+        NodeHandle::new(
+            Node {
+                id: None,
+                values: values,
+                children: None,
+                next: next 
+            })
+    }
+
+
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<RefCell<NodeLink<K>>>) -> NodeHandle<K> {
+        NodeHandle::new(
+            Node { 
+                id: None,
+                values: values,
+                children: Some(children),
+                next: NodeLink::Empty 
+            })
     }   
 
 
