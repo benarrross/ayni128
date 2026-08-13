@@ -1,4 +1,5 @@
 #![allow(unused)]
+use std::cell::RefCell;
 use std::io::Write;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
@@ -11,6 +12,8 @@ use super::bplustree::*;
 
 
 // Refcounted pointer to a node that is loaded into memory
+// NYI do we need the RwLock around the node? The only time it is mutated is on one thread.
+// Otherwise we use inner mutability around the list of child nodes.
 #[derive(Debug, Clone)]
 pub struct NodeHandle<const K: usize>(Arc<RwLock<Node<K>>>);
 
@@ -25,7 +28,7 @@ impl<const K: usize> NodeHandle<K> {
         self.0.read().unwrap()
     }
 
-    pub fn write_lock(&mut self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
+    pub fn write_lock(&self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
         self.0.write().unwrap()
     }
 }
@@ -52,7 +55,7 @@ pub enum SplitResult<const K:usize> {
 pub struct Node<const K: usize> {
     pub id : Option<BlobId>, // NYI do we need this afterall?
     pub values : SortedArray<u128>,
-    pub children: Option<Vec<NodeLink<K>>>,
+    pub children: Option<Vec<RefCell<NodeLink<K>>>>,
     pub next : NodeLink<K>
 }
 
@@ -68,7 +71,7 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: Vec<u128>, children: Vec<NodeLink<K>>, next: NodeLink<K>) -> Self {
+    pub fn new_branch(values: Vec<u128>, children: Vec<RefCell<NodeLink<K>>>, next: NodeLink<K>) -> Self {
         Node { 
             id: None,
             values: SortedArray::from_values(values),

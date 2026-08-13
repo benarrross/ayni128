@@ -87,7 +87,7 @@ fn insert_several() {
 
 
 #[test]
-fn insert_many() {
+fn insert_many_in_order() {
     const K:usize = 4;
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
@@ -100,6 +100,8 @@ fn insert_many() {
     for value in 0..K*4 {
         view.put(value as u128);
         inserted_count += 1;
+
+        assert_eq!(value as u128, view.get(value as u128));
 
         let mut iter = view.iter(0, u128::MAX).into_iter();
         for value in 0..inserted_count {

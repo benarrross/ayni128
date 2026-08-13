@@ -53,11 +53,15 @@ impl<T: Copy + Ord> SortedArray<T> {
     }
 
 
-    pub fn get(&self, value: T) -> Option<T> {
+    pub fn find(&self, value: T) -> T {
         match self.values.binary_search(&value) {
-            Ok(index) => Some(self.values[index]),
-            Err(index) => None,
+            Ok(index) => self.values[index],
+            Err(index) => self.values[index],
         }
+    }
+
+    pub fn exists(&self, value: T) -> bool {
+        self.values.binary_search(&value).is_ok()
     }
 
 
