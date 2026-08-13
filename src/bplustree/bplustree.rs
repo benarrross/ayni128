@@ -58,11 +58,11 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
     }
 
 
-    pub fn get_hnode(&self, node_link: NodeLink<K>) -> NodeHandle<K> {
+    pub fn get_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
 
         match node_link {
-            NodeLink::Loaded(hnode) => hnode,
-            NodeLink::Edited(hnode) => hnode,
+            NodeLink::Loaded(hnode) => hnode.clone(),
+            NodeLink::Edited(hnode) => hnode.clone(),
             NodeLink::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
             NodeLink::Empty => panic!("Attempting to get an empty node link"),
         }

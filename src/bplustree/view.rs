@@ -176,7 +176,7 @@ impl<'a, const K: usize> View<'a, K> {
     fn get_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
         match node_link {
             NodeLink::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode(node_link.clone());
+                let hnode = self.based_on.get_hnode(node_link);
                 *node_link = NodeLink::Loaded(hnode.clone());
                 hnode
             },
@@ -185,24 +185,24 @@ impl<'a, const K: usize> View<'a, K> {
             NodeLink::Empty => panic!("NYI")
         }
     }
-    
+
 
     /// Gets a mutable version of the node and updates the passed in link if necesssary
     fn get_mutable_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
 
         match node_link {
             NodeLink::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode(node_link.clone());
-                let node_copy = hnode.read_lock().clone();
-                let new_hnode = NodeHandle::new(node_copy);
-                *node_link = NodeLink::Edited(new_hnode.clone());
-                new_hnode
+                let hnode = self.based_on.get_hnode(node_link);
+                let mutable_node = hnode.read_lock().clone();
+                let mutable_hnode = NodeHandle::new(mutable_node);
+                *node_link = NodeLink::Edited(mutable_hnode.clone());
+                mutable_hnode
             },
             NodeLink::Loaded(hnode) => {
-                let node_copy = hnode.read_lock().clone();
-                let new_hnode = NodeHandle::new(node_copy);
-                *node_link = NodeLink::Edited(new_hnode.clone());
-                new_hnode
+                let mutable_node = hnode.read_lock().clone();
+                let mutable_hnode = NodeHandle::new(mutable_node);
+                *node_link = NodeLink::Edited(mutable_hnode.clone());
+                mutable_hnode
             },
             NodeLink::Edited(hnode) => hnode.clone(),
             NodeLink::Empty => panic!("Can't make an empty node link mutable")
