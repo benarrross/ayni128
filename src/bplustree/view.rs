@@ -10,6 +10,8 @@ use crate::sortedarray::*;
 
 use super::bplustree::*;
 use super::node::*;
+use super::nodehandle::*;
+use super::nodelink::*;
 use super::rangeiterator::{*};
 
 

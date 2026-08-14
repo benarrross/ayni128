@@ -10,6 +10,8 @@ use crate::BlobId;
 use super::bplustree::*;
 use super::view::*;
 use super::node::*;
+use super::nodehandle::*;
+use super::nodelink::*;
 
 
 pub struct RangeCollection<'a, const K: usize> {

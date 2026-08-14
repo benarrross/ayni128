@@ -9,6 +9,8 @@ use crate::BlobId;
 use crate::BlobStore;
 
 use super::node::*;
+use super::nodehandle::*;
+use super::nodelink::*;
 use super::View;
 
 

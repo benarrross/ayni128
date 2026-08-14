@@ -10,39 +10,10 @@ use crate::bplustree::node::SplitResult::NoSplit;
 use crate::{blobstore::*, sortedarray::*};
 
 use super::bplustree::*;
+use super::nodehandle::*;
+use super::nodelink::*;
 
 
-#[derive(Debug, Clone)]
-pub struct NodeHandle<const K: usize>(Arc<RwLock<Node<K>>>);
-
-
-impl<const K: usize> NodeHandle<K> {
-    
-    pub fn new(inner: Node<K>) -> Self {
-        NodeHandle(Arc::new(RwLock::new(inner)))
-    }
-
-    pub fn read_lock(&self) -> std::sync::RwLockReadGuard<'_, Node<K>> {
-        self.0.read().unwrap()
-    }
-
-    pub fn write_lock(&self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
-        self.0.write().unwrap()
-    }
-}
-
-
-// Node that may or may not be loaded into memory yet
-#[derive(Debug, Clone)]
-pub enum NodeLink<const K: usize> {
-    Empty,
-    Unloaded(BlobId),
-    Loaded(NodeHandle<K>),
-    Edited(NodeHandle<K>)
-}
-
-
-// NYI replace this with std::Option?
 pub enum SplitResult<const K:usize> {
     Split(NodeHandle<K>),
     NoSplit
