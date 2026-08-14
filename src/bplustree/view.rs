@@ -54,10 +54,13 @@ impl<'a, const K: usize> View<'a, K> {
         }
     }
 
+
+    /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
         let root_hnode = self.get_hnode_from_link(&mut self.root_node_link.borrow_mut());
         RangeCollection::new(self, root_hnode, min, mac)
     }   
+
 
     /// Inserts a value into the B+tree.
     pub fn put(&self, value : u128) {
