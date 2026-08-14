@@ -20,12 +20,24 @@ pub enum SplitResult<const K:usize> {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Node<const K: usize> {
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<RefCell<NodeLink<K>>>>,
     pub next : NodeLink<K>
+}
+
+
+impl<const K: usize> Clone for Node<K> {
+    fn clone(&self) -> Self {
+        Node {
+            id: self.id.clone(),
+            values: self.values.clone(),
+            children: self.children.clone(),
+            next: self.next.clone(),
+        }
+    }
 }
 
 
