@@ -58,7 +58,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
     }
 
 
-    pub fn get_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn get_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
 
         match node_link {
             NodeLink::Loaded(hnode) => hnode.clone(),
@@ -66,13 +66,5 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
             NodeLink::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
             NodeLink::Empty => panic!("Attempting to get an empty node link"),
         }
-        
-        // let based_on_root = &*root.read_lock();
-        // let mut mutable_root = based_on_root.clone();
-
-        // match self.loaded_nodes.borrow().get(&id) {
-        //     Some(loaded_hnode) => loaded_hnode.clone(),
-        //     None => unimplemented!() // NYI load the blob from the backing store
-        // }
     }
 }

@@ -42,7 +42,7 @@ pub enum NodeLink<const K: usize> {
 }
 
 
-// NYI replace this with std Option?
+// NYI replace this with std::Option?
 pub enum SplitResult<const K:usize> {
     Split(NodeHandle<K>),
     NoSplit
@@ -51,7 +51,7 @@ pub enum SplitResult<const K:usize> {
 
 #[derive(Debug, Clone)]
 pub struct Node<const K: usize> {
-    pub id : Option<BlobId>, // NYI do we need this afterall?
+    pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<RefCell<NodeLink<K>>>>,
     pub next : NodeLink<K>

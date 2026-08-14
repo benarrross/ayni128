@@ -40,58 +40,94 @@ impl<'a, const K: usize> IntoIterator for RangeCollection<'a, K> {
 
 
 pub struct RangeIterator<'a, const K: usize> {
-    based_on: &'a View<'a, K>,
-    root_node: NodeHandle<K>,
+    based_on_view: &'a View<'a, K>,
+    root_hnode: NodeHandle<K>,
     min: u128,
     mac: u128,
-    current_node: Option<NodeHandle<K>>,
-    index: usize
+    current_hnode: Option<NodeHandle<K>>,
+    current_index: usize
 }
+
 
 impl<'a, const K: usize> RangeIterator<'a,  K> {
 
-    pub fn new(based_on: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
+    pub fn new(based_on_view: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         RangeIterator { 
-            based_on, 
-            root_node: root_node.clone(), 
+            based_on_view, 
+            root_hnode: root_node.clone(), 
             min: min, 
             mac: mac,
-            current_node: None,
-            index: 0  }
+            current_hnode: None,
+            current_index: 0  }
     }
 
 
     fn find_first(&mut self) -> Option<u128> {
 
-        self.current_node = Option::Some(self.root_node.clone());
-        let nodelink = self.current_node.as_ref().map(|nodelink| nodelink);
-        let node = Option::expect(nodelink, "foo").read_lock();
-        
-        self.index = node.values.find_index(self.min);
-        
-        if self.index < node.values.len() {
-            Option::Some(node.values[self.index])
+        // Find the leaf node
+        let mut hnode = self.root_hnode.clone();
+        loop {
+            let hnode_cur = hnode.clone();
+            let node_read_lock = hnode_cur.read_lock();
+            if (node_read_lock.is_leaf()) {
+                break;
+            }
+
+            let child_index = node_read_lock.values.find_range_index(self.min);
+            hnode = self.based_on_view.get_child_hnode(&node_read_lock, child_index);
         }
-        else {
-            Option::None
+
+        // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 
+        // between two leaf nodes. If this is the case, advance to the next one.
+        let mut go_to_next_leaf = false;
+        let mut index = 0;
+        {
+            let leaf_node_read_lock = hnode.read_lock();
+            index = leaf_node_read_lock.values.find_index(self.min);
+            if (index > leaf_node_read_lock.values.len()) {
+                go_to_next_leaf = true;
+            }
         }
+        if (go_to_next_leaf) {
+            hnode = match self.based_on_view.get_next_hnode(&hnode) {
+                Some(hnode_next) => hnode_next,
+                None => { return Option::None; }
+            };
+            index = 0;
+        }
+
+        // Now that we have the correct node and index, start enumerating
+        self.current_hnode = Option::Some(hnode.clone());
+        self.current_index = index;
+        Option::Some(hnode.read_lock().values[index])
     }
+
 
     fn find_next(&mut self) -> Option<u128> {
 
-        let nodelink = self.current_node.as_ref().map(|nodelink| nodelink);
-        let node = Option::expect(nodelink, "foo").read_lock();
+        // Advance to the next value in this node
+        self.current_index += 1;
 
-        self.index = self.index + 1;        
-        if self.index < node.values.len() {
-            Option::Some(node.values[self.index])
+        // Advance to the next leaf node if necessary
+        let mut current_hnode = self.current_hnode.as_ref().unwrap().clone();
+        let mut current_node_read_lock = current_hnode.read_lock();
+        if self.current_index >= current_node_read_lock.values.len() {
+            self.current_hnode = self.based_on_view.get_next_hnode(&current_hnode); // BUG this tries to take a write lock while we have a read lock
+            self.current_index = 0;
+
+            let current_node = match &self.current_hnode { 
+                Some(current_hnode_unwrapped) => current_hnode_unwrapped.read_lock(),
+                None => { return None; }
+            };
+        }
+
+        if self.current_index < current_node_read_lock.values.len() {
+            Option::Some(current_node_read_lock.values[self.current_index])
         }
         else {
             Option::None
         }
     }
-
-
 }
 
 
@@ -101,7 +137,7 @@ impl<'a, const K: usize> Iterator for RangeIterator<'a, K> {
 
     fn next(&mut self) -> Option<Self::Item> {
 
-         match &self.current_node {
+         match &self.current_hnode {
             None => self.find_first(),
             Some(node) => self.find_next()
         }

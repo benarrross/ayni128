@@ -37,6 +37,7 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     /// Gets the next value greater than or equal to the specified value.
+    /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
         let hnode = self.get_hnode_from_link(&mut self.root_node_link.borrow_mut());
         self.get_from_node(&hnode.read_lock(), value)
@@ -156,7 +157,7 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
+    pub(super) fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
         self.get_hnode_from_link(&mut child_link.borrow_mut())
     }
@@ -170,10 +171,10 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    fn get_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn get_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
         match node_link {
             NodeLink::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode(node_link);
+                let hnode = self.based_on.get_hnode_from_link(node_link);
                 *node_link = NodeLink::Loaded(hnode.clone());
                 hnode
             },
@@ -184,12 +185,23 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
+    pub(super) fn get_next_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
+        let mut node = hnode.write_lock();
+
+        if matches!(node.next, NodeLink::Empty) {
+            Option::None
+        } else {
+            Option::Some(self.get_hnode_from_link(&mut node.next))
+        }
+    }
+
+
     /// Gets a mutable copy of the node and updates the passed in link if necesssary
     fn get_mutable_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
 
         match node_link {
             NodeLink::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode(node_link);
+                let hnode = self.based_on.get_hnode_from_link(node_link);
                 let mutable_node = hnode.read_lock().clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
                 *node_link = NodeLink::Edited(mutable_hnode.clone());
