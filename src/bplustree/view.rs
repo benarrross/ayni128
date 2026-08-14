@@ -23,6 +23,8 @@ pub struct View<'a, const K: usize> {
 
 impl<'a, const K: usize> View<'a, K> {
 
+    /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
+    /// You must commit the view for your changes to be saved.
     pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
 
         View { 
@@ -34,8 +36,9 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
+    /// Gets the next value greater than or equal to the specified value.
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.get_hnode(&mut self.root_node_link.borrow_mut());
+        let hnode = self.get_hnode_from_link(&mut self.root_node_link.borrow_mut());
         self.get_from_node(&hnode.read_lock(), value)
     }
 
@@ -52,11 +55,11 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
     pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
-        let root_hnode = self.get_hnode(&mut self.root_node_link.borrow_mut());
+        let root_hnode = self.get_hnode_from_link(&mut self.root_node_link.borrow_mut());
         RangeCollection::new(self, root_hnode, min, mac)
     }   
 
-
+    /// Inserts a value into the B+tree.
     pub fn put(&self, value : u128) {
 
         // Update our list of added/deleted values. This is used to commit the transaction later.
@@ -67,7 +70,7 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = self.get_mutable_hnode(&mut self.root_node_link.borrow_mut());
+        let mutable_root_hnode = self.get_mutable_hnode_from_link(&mut self.root_node_link.borrow_mut());
         if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
            *self.root_node_link.borrow_mut() = NodeLink::Edited(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
@@ -114,32 +117,32 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     /// Inserts a value into a node and splits it if necessary
-    fn insert_and_split(&self, node_mut: &mut Node<K>, value : u128) -> SplitResult<K> {
+    fn insert_and_split(&self, node: &mut Node<K>, value : u128) -> SplitResult<K> {
 
-        if node_mut.is_leaf() {
-            node_mut.values.insert(value);
+        if node.is_leaf() {
+            node.values.insert(value);
 
-            if (node_mut.values.len() > K) {
-                SplitResult::Split(Self::split_leaf_node(node_mut))
+            if (node.values.len() > K) {
+                SplitResult::Split(Self::split_leaf_node(node))
             } else {
                 SplitResult::NoSplit
             }
         }
         else {
             // Find the child this should go in and ask the child to insert the value
-            let index = node_mut.values.find_range_index(value);
-            let mut mutable_child_hnode = self.get_child_mutable_hnode(node_mut, index);
+            let index = node.values.find_range_index(value);
+            let mut mutable_child_hnode = self.get_child_mutable_hnode(node, index);
 
             // Handle the child splitting (which might force us to split the current node also)
             if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_child_hnode.write_lock(), value) {
 
                 let right_node = &*right_hnode.read_lock();
-                node_mut.values.insert(right_node.values[0]);
-                node_mut.children.as_mut().unwrap().insert(index, RefCell::new(NodeLink::Edited(right_hnode.clone())));
+                node.values.insert(right_node.values[0]);
+                node.children.as_mut().unwrap().insert(index, RefCell::new(NodeLink::Edited(right_hnode.clone())));
 
                 // Now see if we need to split
-                if (node_mut.values.len() > K) {
-                    SplitResult::Split(Self::split_branch_node(node_mut))
+                if (node.values.len() > K) {
+                    SplitResult::Split(Self::split_branch_node(node))
                 } else {
                     SplitResult::NoSplit
                 }
@@ -151,20 +154,20 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
-
         let child_link = &node.children.as_ref().unwrap()[index];
-        self.get_hnode(&mut child_link.borrow_mut())
+        self.get_hnode_from_link(&mut child_link.borrow_mut())
     }
 
 
+    /// Gets a handle to a child and ensures it is mutable. Clones it into the current
+    /// transaction if necessary. Updates the NodeLink in the passed in node if necessary.
     fn get_child_mutable_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
-
         let child_link = &node.children.as_ref().unwrap()[index];
-        self.get_mutable_hnode(&mut child_link.borrow_mut())
+        self.get_mutable_hnode_from_link(&mut child_link.borrow_mut())
     }
 
 
-    fn get_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+    fn get_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
         match node_link {
             NodeLink::Unloaded(id) => {
                 let hnode = self.based_on.get_hnode(node_link);
@@ -178,8 +181,8 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    /// Gets a mutable version of the node and updates the passed in link if necesssary
-    fn get_mutable_hnode(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+    /// Gets a mutable copy of the node and updates the passed in link if necesssary
+    fn get_mutable_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
 
         match node_link {
             NodeLink::Unloaded(id) => {
