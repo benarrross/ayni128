@@ -34,7 +34,18 @@ impl<const K: usize> Clone for Node<K> {
         Node {
             id: self.id.clone(),
             values: self.values.clone(),
-            children: self.children.clone(),
+            children: match &self.children {
+                Option::Some(children) => 
+                    Some(
+                        children
+                        .iter()
+                        .map(|nodelink_read_lock| {
+                            let nodelink_reader = nodelink_read_lock.borrow();
+                            RefCell::new(nodelink_reader.clone())
+                        })
+                        .collect()),
+                    None => None
+                },
             next: self.next.clone(),
         }
     }
