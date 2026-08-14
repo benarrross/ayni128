@@ -1,9 +1,10 @@
 #![allow(unused)]
 use std::cell::RefCell;
+use std::fmt;
+use std::mem;
 use std::io::Write;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
-use std::mem;
 
 use crate::bplustree::node::SplitResult::NoSplit;
 use crate::{blobstore::*, sortedarray::*};
@@ -11,9 +12,6 @@ use crate::{blobstore::*, sortedarray::*};
 use super::bplustree::*;
 
 
-// Refcounted pointer to a node that is loaded into memory
-// NYI do we need the RwLock around the node? The only time it is mutated is on one thread.
-// Otherwise we use inner mutability around the list of child nodes.
 #[derive(Debug, Clone)]
 pub struct NodeHandle<const K: usize>(Arc<RwLock<Node<K>>>);
 
