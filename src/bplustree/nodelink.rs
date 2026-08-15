@@ -13,7 +13,6 @@ use super::bplustree::*;
 use super::nodehandle::*;
 
 
-// Node that may or may not be loaded into memory yet
 #[derive(Debug, Clone)]
 enum NodeLinkInner<const K: usize> {
     Empty,
@@ -24,50 +23,43 @@ enum NodeLinkInner<const K: usize> {
 
 
 #[derive(Debug)]
-pub struct NodeLinkOuter<const K:usize> {
+pub struct NodeLink<const K:usize> {
     inner: RwLock<NodeLinkInner<K>>
 }
 
-impl<const K: usize> Clone for NodeLinkOuter<K> {
+
+impl<const K: usize> Clone for NodeLink<K> {
     fn clone(&self) -> Self {
-        NodeLinkOuter { 
+        NodeLink { 
             inner: RwLock::new(self.inner.read().unwrap().clone())
         }
     }
 }
 
 
-impl<const K: usize> NodeLinkOuter<K> {
+/// Link to a node that may be loaded, or may still be on disk.
+impl<const K: usize> NodeLink<K> {
     
     pub fn empty() -> Self {
-        NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Empty) }
+        NodeLink { inner: RwLock::new(NodeLinkInner::Empty) }
     }
 
     pub fn loaded(value: NodeHandle<K>) -> Self {
-        NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Loaded(value)) }
+        NodeLink { inner: RwLock::new(NodeLinkInner::Loaded(value)) }
     }
 
     pub fn edited(value: NodeHandle<K>) -> Self {
-        NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Edited(value)) }
+        NodeLink { inner: RwLock::new(NodeLinkInner::Edited(value)) }
     }
 
     pub fn blobid(value: BlobId) -> Self {
-        NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Unloaded(value)) }
+        NodeLink { inner: RwLock::new(NodeLinkInner::Unloaded(value)) }
     }
 
     pub fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
         matches!(*read_lock, NodeLinkInner::Empty )
     }
-
-    //pub fn inner_deprecate_x(&self) -> NodeLinkInner<K> { self.inner.borrow().clone() }
-    // pub fn read_lock(&self) -> std::sync::RwLockReadGuard<'_, Node<K>> {
-    //     self.0.read().unwrap()
-    // }
-
-    // pub fn write_lock(&self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
-    //     self.0.write().unwrap()
-    // }
 
     /// Gets a node handle from a link, loading the node from storage if necessary.
     pub fn get(&self, based_on: &BPlusTree<'_, K>) -> NodeHandle<K> {

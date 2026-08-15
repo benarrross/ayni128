@@ -15,7 +15,7 @@ use super::View;
 
 
 pub struct BPlusTree<'a, const K: usize> {
-    root_id: BlobId,
+    root_id: BlobId,    // NYI change this to root: NodeLink<K>
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: &'a mut BlobStore<'a>
 }
@@ -43,7 +43,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
 
     pub fn get_view(&'a self) -> View<'a, K> {
-        View::new(self, self.get_node_link_outer(self.root_id))
+        View::new(self, self.get_link_to_loaded_node(self.root_id))
     }
 
 
@@ -51,16 +51,17 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
         panic!("NYI");
     }
 
-    // NYI rename to load_node?
-    fn get_node_link_outer(&self, id: BlobId) -> NodeLinkOuter<K> {
-        match self.loaded_hnodes.borrow().get(&id) {
-            Some(loaded_hnode) => NodeLinkOuter::loaded(loaded_hnode.clone()),
-            None => NodeLinkOuter::blobid(id) // NYI need to actually load the node
+
+    fn get_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
+        match self.loaded_hnodes.borrow().get(&blobid) {
+            Some(loaded_hnode) => NodeLink::loaded(loaded_hnode.clone()),
+            None => NodeLink::blobid(blobid) // NYI need to actually load the node
         }
     }
 
 
-    pub(super) fn load_node(&self, node_link_outer: &NodeLinkOuter<K>) -> NodeHandle<K> {
+    /// Helper that NodeLink uses to load a node from storage.
+    pub(super) fn load_node(&self, node_link_outer: &NodeLink<K>) -> NodeHandle<K> {
         unimplemented!()
     }
 

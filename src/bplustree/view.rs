@@ -17,7 +17,7 @@ use super::rangeiterator::{*};
 
 pub struct View<'a, const K: usize> {
     based_on: &'a BPlusTree<'a, K>,
-    root_node_link: RefCell<NodeLinkOuter<K>>,
+    root_node_link: RefCell<NodeLink<K>>,
     puts: RefCell<SortedArray<u128>>,
     deletes: RefCell<SortedArray<u128>>
 }
@@ -27,7 +27,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLinkOuter<K>) -> Self {
+    pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
 
         View { 
             based_on, 
@@ -78,7 +78,7 @@ impl<'a, const K: usize> View<'a, K> {
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode_from_outer_link(&mut self.root_node_link.borrow_mut());
         if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
-           *self.root_node_link.borrow_mut() = NodeLinkOuter::edited(
+           *self.root_node_link.borrow_mut() = NodeLink::edited(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
     }
@@ -92,8 +92,8 @@ impl<'a, const K: usize> View<'a, K> {
         Node::new_branch(
             SortedArray::from_values(vec![right_node.values[0]]),
             vec![
-                NodeLinkOuter::edited(left_hnode.clone()),
-                NodeLinkOuter::edited(right_hnode.clone()) 
+                NodeLink::edited(left_hnode.clone()),
+                NodeLink::edited(right_hnode.clone()) 
             ])
     }
 
@@ -107,7 +107,7 @@ impl<'a, const K: usize> View<'a, K> {
         let new_right_hnode = Node::new_leaf(right_values, node.next.clone());
 
         // Link the node we just split from to the new node in the leaf node linked list
-        node.next = NodeLinkOuter::edited(new_right_hnode.clone());
+        node.next = NodeLink::edited(new_right_hnode.clone());
         new_right_hnode
     }
 
@@ -144,7 +144,7 @@ impl<'a, const K: usize> View<'a, K> {
 
                 let right_node = &*right_hnode.read_lock();
                 node.values.insert(right_node.values[0]);
-                node.children.as_mut().unwrap().insert(index, NodeLinkOuter::edited(right_hnode.clone()));
+                node.children.as_mut().unwrap().insert(index, NodeLink::edited(right_hnode.clone()));
 
                 // Now see if we need to split
                 if (node.values.len() > K) {
@@ -201,7 +201,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Gets a mutable copy of the node and updates the passed in link if necesssary
     // NYI this function can go away
-    fn get_mutable_hnode_from_outer_link(&self, node_link: &NodeLinkOuter<K>) -> NodeHandle<K> {
+    fn get_mutable_hnode_from_outer_link(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
         node_link.get_mutable(self.based_on)
     }
 

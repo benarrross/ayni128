@@ -24,8 +24,8 @@ pub enum SplitResult<const K:usize> {
 pub struct Node<const K: usize> {
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
-    pub children: Option<Vec<NodeLinkOuter<K>>>,
-    pub next : NodeLinkOuter<K>
+    pub children: Option<Vec<NodeLink<K>>>,
+    pub next : NodeLink<K>
 }
 
 // // NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
@@ -59,11 +59,11 @@ impl<const K: usize> Node<K> {
             id: None,
             values: SortedArray::new(),
             children: None,
-            next: NodeLinkOuter::empty() }
+            next: NodeLink::empty() }
     }
 
 
-    pub fn new_leaf(values: SortedArray<u128>, next: NodeLinkOuter<K>) -> NodeHandle<K> {
+    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> NodeHandle<K> {
         NodeHandle::new(
             Node {
                 id: None,
@@ -74,13 +74,13 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLinkOuter<K>>) -> NodeHandle<K> {
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLink<K>>) -> NodeHandle<K> {
         NodeHandle::new(
             Node { 
                 id: None,
                 values: values,
                 children: Some(children),
-                next: NodeLinkOuter::empty() 
+                next: NodeLink::empty() 
             })
     }   
 
