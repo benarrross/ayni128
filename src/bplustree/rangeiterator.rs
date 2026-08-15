@@ -91,7 +91,7 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
             }
         }
         if (go_to_next_leaf) {
-            hnode = match self.based_on_view.get_next_hnode(&hnode) {
+            hnode = match self.based_on_view.get_next_leaf_hnode(&hnode) {
                 Some(hnode_next) => hnode_next,
                 None => { return Option::None; }
             };
@@ -114,7 +114,7 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
         let mut current_hnode = self.current_hnode.as_ref().unwrap().clone();
         let mut current_node_read_lock = current_hnode.read_lock();
         if self.current_index >= current_node_read_lock.values.len() {
-            self.current_hnode = self.based_on_view.get_next_hnode(&current_hnode); // BUG this tries to take a write lock while we have a read lock
+            self.current_hnode = self.based_on_view.get_next_leaf_hnode(&current_hnode); // BUG this tries to take a write lock while we have a read lock
             self.current_index = 0;
 
             let current_node = match &self.current_hnode { 

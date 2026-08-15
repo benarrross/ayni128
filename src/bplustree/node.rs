@@ -20,36 +20,36 @@ pub enum SplitResult<const K:usize> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node<const K: usize> {
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
-    pub children: Option<Vec<RefCell<NodeLinkInner<K>>>>,
-    pub next : NodeLinkInner<K>
+    pub children: Option<Vec<NodeLinkOuter<K>>>,
+    pub next : NodeLinkOuter<K>
 }
 
-// NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
-impl<const K: usize> Clone for Node<K> {
-    fn clone(&self) -> Self {
-        Node {
-            id: self.id.clone(),
-            values: self.values.clone(),
-            children: match &self.children {
-                Option::Some(children) => 
-                    Some(
-                        children
-                        .iter()
-                        .map(|nodelink_read_lock| {
-                            let nodelink_reader = nodelink_read_lock.borrow();
-                            RefCell::new(nodelink_reader.clone())
-                        })
-                        .collect()),
-                    None => None
-                },
-            next: self.next.clone(),
-        }
-    }
-}
+// // NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
+// impl<const K: usize> Clone for Node<K> {
+//     fn clone(&self) -> Self {
+//         Node {
+//             id: self.id.clone(),
+//             values: self.values.clone(),
+//             children: match &self.children {
+//                 Option::Some(children) => 
+//                     Some(
+//                         children
+//                         .iter()
+//                         .map(|nodelink_read_lock| {
+//                             let nodelink_reader = nodelink_read_lock.borrow();
+//                             RefCell::new(nodelink_reader.clone())
+//                         })
+//                         .collect()),
+//                     None => None
+//                 },
+//             next: self.next.clone(),
+//         }
+//     }
+// }
 
 
 impl<const K: usize> Node<K> {  
@@ -59,11 +59,11 @@ impl<const K: usize> Node<K> {
             id: None,
             values: SortedArray::new(),
             children: None,
-            next: NodeLinkInner::Empty }
+            next: NodeLinkOuter::empty() }
     }
 
 
-    pub fn new_leaf(values: SortedArray<u128>, next: NodeLinkInner<K>) -> NodeHandle<K> {
+    pub fn new_leaf(values: SortedArray<u128>, next: NodeLinkOuter<K>) -> NodeHandle<K> {
         NodeHandle::new(
             Node {
                 id: None,
@@ -74,13 +74,13 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: SortedArray<u128>, children: Vec<RefCell<NodeLinkInner<K>>>) -> NodeHandle<K> {
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLinkOuter<K>>) -> NodeHandle<K> {
         NodeHandle::new(
             Node { 
                 id: None,
                 values: values,
                 children: Some(children),
-                next: NodeLinkInner::Empty 
+                next: NodeLinkOuter::empty() 
             })
     }   
 

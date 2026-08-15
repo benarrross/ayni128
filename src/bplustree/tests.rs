@@ -12,8 +12,6 @@ fn create_empty() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
     let mut list = BPlusTree::<4>::new(&mut blobs);
-
-    //list.put(32);
 }
 
 
@@ -28,7 +26,6 @@ fn enum_empty() {
     for item in view.iter(0, u128::MAX) {
         assert!(false, "Should not find an item");
     }
-    //list.put(32);
 }
 
 

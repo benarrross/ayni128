@@ -92,8 +92,8 @@ impl<'a, const K: usize> View<'a, K> {
         Node::new_branch(
             SortedArray::from_values(vec![right_node.values[0]]),
             vec![
-                RefCell::new(NodeLinkInner::Edited(left_hnode.clone())),
-                RefCell::new(NodeLinkInner::Edited(right_hnode.clone())) 
+                NodeLinkOuter::edited(left_hnode.clone()),
+                NodeLinkOuter::edited(right_hnode.clone()) 
             ])
     }
 
@@ -107,7 +107,7 @@ impl<'a, const K: usize> View<'a, K> {
         let new_right_hnode = Node::new_leaf(right_values, node.next.clone());
 
         // Link the node we just split from to the new node in the leaf node linked list
-        node.next = NodeLinkInner::Edited(new_right_hnode.clone());
+        node.next = NodeLinkOuter::edited(new_right_hnode.clone());
         new_right_hnode
     }
 
@@ -122,7 +122,7 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    /// Inserts a value into a node and splits it if necessary
+    /// Inserts a value into a node and splits it if necessary.
     fn insert_and_split(&self, node: &mut Node<K>, value : u128) -> SplitResult<K> {
 
         if node.is_leaf() {
@@ -144,7 +144,7 @@ impl<'a, const K: usize> View<'a, K> {
 
                 let right_node = &*right_hnode.read_lock();
                 node.values.insert(right_node.values[0]);
-                node.children.as_mut().unwrap().insert(index, RefCell::new(NodeLinkInner::Edited(right_hnode.clone())));
+                node.children.as_mut().unwrap().insert(index, NodeLinkOuter::edited(right_hnode.clone()));
 
                 // Now see if we need to split
                 if (node.values.len() > K) {
@@ -159,9 +159,10 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
+    /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        self.get_hnode_from_link_deprecate(&mut child_link.borrow_mut())
+        child_link.get(&self.based_on)
     }
 
 
@@ -169,31 +170,32 @@ impl<'a, const K: usize> View<'a, K> {
     /// transaction if necessary. Updates the NodeLink in the passed in node if necessary.
     fn get_child_mutable_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        self.get_mutable_hnode_from_link_deprecate(&mut child_link.borrow_mut())
+        child_link.get_mutable(&self.based_on)
     }
 
 
-    pub(super) fn get_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
-        match node_link {
-            NodeLinkInner::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
-                *node_link = NodeLinkInner::Loaded(hnode.clone());
-                hnode
-            },
-            NodeLinkInner::Loaded(hnode) => hnode.clone(),
-            NodeLinkInner::Edited(hnode) => hnode.clone(),
-            NodeLinkInner::Empty => panic!("NYI")
-        }
-    }
+    // pub(super) fn get_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
+    //     match node_link {
+    //         NodeLinkInner::Unloaded(id) => {
+    //             let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
+    //             *node_link = NodeLinkInner::Loaded(hnode.clone());
+    //             hnode
+    //         },
+    //         NodeLinkInner::Loaded(hnode) => hnode.clone(),
+    //         NodeLinkInner::Edited(hnode) => hnode.clone(),
+    //         NodeLinkInner::Empty => panic!("NYI")
+    //     }
+    // }
 
-    
-    pub(super) fn get_next_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
-        let mut node = hnode.write_lock();
 
-        if matches!(node.next, NodeLinkInner::Empty) {
+    /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
+    pub(super) fn get_next_leaf_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
+        let mut node_read = hnode.read_lock();
+        
+        if node_read.next.is_empty() {
             Option::None
         } else {
-            Option::Some(self.get_hnode_from_link_deprecate(&mut node.next))
+            Option::Some(node_read.next.get(&self.based_on))
         }
     }
 
@@ -204,26 +206,26 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    /// Gets a mutable copy of the node and updates the passed in link if necesssary
-    fn get_mutable_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
+    // /// Gets a mutable copy of the node and updates the passed in link if necesssary
+    // fn get_mutable_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
 
-        match node_link {
-            NodeLinkInner::Unloaded(id) => {
-                let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
-                let mutable_node = hnode.read_lock().clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
-                mutable_hnode
-            },
-            NodeLinkInner::Loaded(hnode) => {
-                let mutable_node = hnode.read_lock().clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
-                mutable_hnode
-            },
-            NodeLinkInner::Edited(hnode) => hnode.clone(),
-            NodeLinkInner::Empty => panic!("Can't make an empty node link mutable")
-        }
-    }
+    //     match node_link {
+    //         NodeLinkInner::Unloaded(id) => {
+    //             let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
+    //             let mutable_node = hnode.read_lock().clone();
+    //             let mutable_hnode = NodeHandle::new(mutable_node);
+    //             *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
+    //             mutable_hnode
+    //         },
+    //         NodeLinkInner::Loaded(hnode) => {
+    //             let mutable_node = hnode.read_lock().clone();
+    //             let mutable_hnode = NodeHandle::new(mutable_node);
+    //             *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
+    //             mutable_hnode
+    //         },
+    //         NodeLinkInner::Edited(hnode) => hnode.clone(),
+    //         NodeLinkInner::Empty => panic!("Can't make an empty node link mutable")
+    //     }
+    // }
 }
 

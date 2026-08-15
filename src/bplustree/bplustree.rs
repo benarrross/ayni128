@@ -59,36 +59,9 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
         }
     }
 
-    fn get_node_link_deprecate(&self, id: BlobId) -> NodeLinkInner<K> {
-        match self.loaded_hnodes.borrow().get(&id) {
-            Some(loaded_node) => NodeLinkInner::Loaded(loaded_node.clone()),
-            None => NodeLinkInner::Unloaded(id)
-        }
-    }
-
-
-    pub(super) fn get_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
-
-        match node_link {
-            NodeLinkInner::Loaded(hnode) => hnode.clone(),
-            NodeLinkInner::Edited(hnode) => hnode.clone(),
-            NodeLinkInner::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
-            NodeLinkInner::Empty => panic!("Attempting to get an empty node link"),
-        }
-    }
-
 
     pub(super) fn load_node(&self, node_link_outer: &NodeLinkOuter<K>) -> NodeHandle<K> {
-
         unimplemented!()
-
-        // let node_link = node_link_outer.inner_deprecate();
-        // match node_link {
-        //     NodeLinkInner::Loaded(hnode) => hnode.clone(),
-        //     NodeLinkInner::Edited(hnode) => hnode.clone(),
-        //     NodeLinkInner::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
-        //     NodeLinkInner::Empty => panic!("Attempting to get an empty node link"),
-        // }
     }
 
 }

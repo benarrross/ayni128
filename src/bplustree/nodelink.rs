@@ -15,7 +15,7 @@ use super::nodehandle::*;
 
 // Node that may or may not be loaded into memory yet
 #[derive(Debug, Clone)]
-pub enum NodeLinkInner<const K: usize> {
+enum NodeLinkInner<const K: usize> {
     Empty,
     Unloaded(BlobId),
     Loaded(NodeHandle<K>),
@@ -39,7 +39,7 @@ impl<const K: usize> Clone for NodeLinkOuter<K> {
 
 impl<const K: usize> NodeLinkOuter<K> {
     
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Empty) }
     }
 
@@ -53,6 +53,11 @@ impl<const K: usize> NodeLinkOuter<K> {
 
     pub fn blobid(value: BlobId) -> Self {
         NodeLinkOuter { inner: RwLock::new(NodeLinkInner::Unloaded(value)) }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        let read_lock = self.inner.read().unwrap();
+        matches!(*read_lock, NodeLinkInner::Empty )
     }
 
     //pub fn inner_deprecate_x(&self) -> NodeLinkInner<K> { self.inner.borrow().clone() }
