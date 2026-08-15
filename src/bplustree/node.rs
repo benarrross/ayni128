@@ -24,11 +24,11 @@ pub enum SplitResult<const K:usize> {
 pub struct Node<const K: usize> {
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
-    pub children: Option<Vec<RefCell<NodeLink<K>>>>,
-    pub next : NodeLink<K>
+    pub children: Option<Vec<RefCell<NodeLinkInner<K>>>>,
+    pub next : NodeLinkInner<K>
 }
 
-
+// NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
 impl<const K: usize> Clone for Node<K> {
     fn clone(&self) -> Self {
         Node {
@@ -59,11 +59,11 @@ impl<const K: usize> Node<K> {
             id: None,
             values: SortedArray::new(),
             children: None,
-            next: NodeLink::Empty }
+            next: NodeLinkInner::Empty }
     }
 
 
-    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> NodeHandle<K> {
+    pub fn new_leaf(values: SortedArray<u128>, next: NodeLinkInner<K>) -> NodeHandle<K> {
         NodeHandle::new(
             Node {
                 id: None,
@@ -74,13 +74,13 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: SortedArray<u128>, children: Vec<RefCell<NodeLink<K>>>) -> NodeHandle<K> {
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<RefCell<NodeLinkInner<K>>>) -> NodeHandle<K> {
         NodeHandle::new(
             Node { 
                 id: None,
                 values: values,
                 children: Some(children),
-                next: NodeLink::Empty 
+                next: NodeLinkInner::Empty 
             })
     }   
 

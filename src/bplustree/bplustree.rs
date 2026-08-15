@@ -16,7 +16,7 @@ use super::View;
 
 pub struct BPlusTree<'a, const K: usize> {
     root_id: BlobId,
-    loaded_nodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
+    loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: &'a mut BlobStore<'a>
 }
 
@@ -33,7 +33,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
         let mut nodes : HashMap<BlobId, NodeHandle<K>> = HashMap::new();
         nodes.insert(root_id, NodeHandle::new(root_node));
 
-        BPlusTree { root_id, loaded_nodes: RefCell::new(nodes), backing_store }
+        BPlusTree { root_id, loaded_hnodes: RefCell::new(nodes), backing_store }
     }
 
 
@@ -43,7 +43,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
 
     pub fn get_view(&'a self) -> View<'a, K> {
-        View::new(self, self.get_node_link(self.root_id))
+        View::new(self, self.get_node_link_outer(self.root_id))
     }
 
 
@@ -51,22 +51,44 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
         panic!("NYI");
     }
 
+    // NYI rename to load_node?
+    fn get_node_link_outer(&self, id: BlobId) -> NodeLinkOuter<K> {
+        match self.loaded_hnodes.borrow().get(&id) {
+            Some(loaded_hnode) => NodeLinkOuter::loaded(loaded_hnode.clone()),
+            None => NodeLinkOuter::blobid(id) // NYI need to actually load the node
+        }
+    }
 
-    fn get_node_link(&self, id: BlobId) -> NodeLink<K> {
-        match self.loaded_nodes.borrow().get(&id) {
-            Some(loaded_node) => NodeLink::Loaded(loaded_node.clone()),
-            None => NodeLink::Unloaded(id)
+    fn get_node_link_deprecate(&self, id: BlobId) -> NodeLinkInner<K> {
+        match self.loaded_hnodes.borrow().get(&id) {
+            Some(loaded_node) => NodeLinkInner::Loaded(loaded_node.clone()),
+            None => NodeLinkInner::Unloaded(id)
         }
     }
 
 
-    pub(super) fn get_hnode_from_link(&self, node_link: &mut NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn get_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
 
         match node_link {
-            NodeLink::Loaded(hnode) => hnode.clone(),
-            NodeLink::Edited(hnode) => hnode.clone(),
-            NodeLink::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
-            NodeLink::Empty => panic!("Attempting to get an empty node link"),
+            NodeLinkInner::Loaded(hnode) => hnode.clone(),
+            NodeLinkInner::Edited(hnode) => hnode.clone(),
+            NodeLinkInner::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
+            NodeLinkInner::Empty => panic!("Attempting to get an empty node link"),
         }
     }
+
+
+    pub(super) fn load_node(&self, node_link_outer: &NodeLinkOuter<K>) -> NodeHandle<K> {
+
+        unimplemented!()
+
+        // let node_link = node_link_outer.inner_deprecate();
+        // match node_link {
+        //     NodeLinkInner::Loaded(hnode) => hnode.clone(),
+        //     NodeLinkInner::Edited(hnode) => hnode.clone(),
+        //     NodeLinkInner::Unloaded(id) => unimplemented!(), // NYI need to load it, or see if loaded_nodes has it
+        //     NodeLinkInner::Empty => panic!("Attempting to get an empty node link"),
+        // }
+    }
+
 }
