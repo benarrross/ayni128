@@ -1,13 +1,5 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::io::{SeekFrom, Split, prelude::*};
-use std::io::Cursor;
-use std::sync::{Arc, RwLock};
-use std::mem;
-
-use crate::BlobId;
 use crate::sortedarray::*;
-
 use super::bplustree::*;
 use super::node::*;
 use super::nodehandle::*;
@@ -28,7 +20,6 @@ impl<'a, const K: usize> View<'a, K> {
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
     pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
-
         View { 
             based_on, 
             root_node_link: RefCell::new(root_node_link.clone()),
@@ -115,7 +106,6 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Splits the right half of a node off into a new branch node and returns it.
     fn split_branch_node(node: &mut Node<K>) -> NodeHandle<K> {
-        
         let split_index = node.values.len() / 2;
         let right_values = node.values.split_off(split_index);
         let right_children = node.children.as_mut().unwrap().split_off(split_index);
@@ -125,7 +115,6 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Inserts a value into a node and splits it if necessary.
     fn insert_and_split(&self, node: &mut Node<K>, value : u128) -> SplitResult<K> {
-
         if node.is_leaf() {
             node.values.insert(value);
 
@@ -192,4 +181,3 @@ impl<'a, const K: usize> View<'a, K> {
         node_link.get_mutable(self.based_on)
     }
 }
-
