@@ -64,7 +64,7 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
             }
 
             let child_index = node_read_lock.values.find_range_index(self.min);
-            hnode = self.based_on_view.get_child_hnode(&node_read_lock, child_index);
+            hnode = self.based_on_view.get_immutable_child_hnode(&node_read_lock, child_index);
         }
 
         // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 

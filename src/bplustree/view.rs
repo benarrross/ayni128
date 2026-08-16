@@ -44,7 +44,7 @@ impl<'a, const K: usize> View<'a, K> {
         }
         else {
             let index = node.values.find_range_index(value);
-            let child_hnode = self.get_child_hnode(node, index);
+            let child_hnode = self.get_immutable_child_hnode(node, index);
             self.get_from_node(&child_hnode.read_lock(), value)
         }
     }
@@ -68,7 +68,7 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = self.get_mutable_hnode_from_outer_link(&self.root_node_link.borrow());
+        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(&self.based_on);
         if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
@@ -127,7 +127,7 @@ impl<'a, const K: usize> View<'a, K> {
         else {
             // Find the child this should go in and ask the child to insert the value
             let index = node.values.find_range_index(value);
-            let mut mutable_child_hnode = self.get_child_mutable_hnode(node, index);
+            let mut mutable_child_hnode = self.get_mutable_child_hnode(node, index);
 
             // Handle the child splitting (which might force us to split the current node also)
             if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_child_hnode.write_lock(), value) {
@@ -150,7 +150,7 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
-    pub(super) fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
+    pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
         child_link.get_immutable(&self.based_on)
     }
@@ -158,7 +158,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Gets a handle to a child and ensures it is mutable. Clones it into the current
     /// transaction if necessary. Updates the NodeLink in the passed in node if necessary.
-    fn get_child_mutable_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
+    fn get_mutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
         child_link.get_mutable(&self.based_on)
     }
@@ -173,11 +173,5 @@ impl<'a, const K: usize> View<'a, K> {
         } else {
             Option::Some(node_read.next.get_immutable(&self.based_on))
         }
-    }
-
-    /// Gets a mutable copy of the node and updates the passed in link if necesssary
-    // NYI this function can go away
-    fn get_mutable_hnode_from_outer_link(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
-        node_link.get_mutable(self.based_on)
     }
 }
