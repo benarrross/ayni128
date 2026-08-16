@@ -33,14 +33,17 @@ fn enum_empty() {
 fn insert_one() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = BPlusTree::<4>::new(&mut blobs);
+    let list = BPlusTree::<4>::new(&mut blobs);
 
     // Insert 99 in a view (but don't commit it yet)
-    let mut view = list.get_view();
+    let view = list.get_view();
     view.put(99);
     for item in view.iter(0, u128::MAX) {
         assert_eq!(99, item);
     }
+    assert_eq!(99, view.get(0));
+    assert_eq!(99, view.get(99));
+    assert_eq!(u128::MAX, view.get(100));
     assert_eq!(1, view.iter(0, u128::MAX).into_iter().count());
 
     // Ensure we don't see 99 outside of the view until we commit
@@ -60,9 +63,9 @@ fn insert_one() {
 fn insert_several() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
-    let mut list = BPlusTree::<4>::new(&mut blobs);
+    let list = BPlusTree::<4>::new(&mut blobs);
 
-    let mut view = list.get_view();
+    let view = list.get_view();
     view.put(99);
     view.put(10);
     view.put(32);

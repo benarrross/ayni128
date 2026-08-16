@@ -85,7 +85,7 @@ impl<const K: usize> NodeLink<K> {
             NodeLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if matches!(&new_inner, NodeLinkKind::Unloaded(new_inner)) {
+        if !matches!(&new_inner, NodeLinkKind::Empty) {
             *self.inner.write().unwrap() = new_inner;
         }
 
@@ -117,9 +117,7 @@ impl<const K: usize> NodeLink<K> {
             NodeLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if matches!(&new_inner, NodeLinkKind::Unloaded(new_inner)) {
-            *self.inner.write().unwrap() = new_inner;
-        } else if matches!(&new_inner, NodeLinkKind::Immutable(new_inner)) {
+        if !matches!(&new_inner, NodeLinkKind::Empty) {
             *self.inner.write().unwrap() = new_inner;
         }
         

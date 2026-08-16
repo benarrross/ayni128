@@ -76,7 +76,7 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = self.get_mutable_hnode_from_outer_link(&mut self.root_node_link.borrow_mut());
+        let mutable_root_hnode = self.get_mutable_hnode_from_outer_link(&self.root_node_link.borrow());
         if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));

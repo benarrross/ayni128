@@ -86,7 +86,7 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
         {
             let leaf_node_read_lock = hnode.read_lock();
             index = leaf_node_read_lock.values.find_index(self.min);
-            if (index > leaf_node_read_lock.values.len()) {
+            if (index >= leaf_node_read_lock.values.len()) {
                 go_to_next_leaf = true;
             }
         }
@@ -101,33 +101,47 @@ impl<'a, const K: usize> RangeIterator<'a,  K> {
         // Now that we have the correct node and index, start enumerating
         self.current_hnode = Option::Some(hnode.clone());
         self.current_index = index;
-        Option::Some(hnode.read_lock().values[index])
+
+        // We could be enumerating an empty list
+        let node_read_lock = hnode.read_lock();
+        if index >= node_read_lock.values.len() {
+            Option::None
+        } else {
+            Option::Some(node_read_lock.values[index])
+        }
     }
 
 
     fn find_next(&mut self) -> Option<u128> {
 
         // Advance to the next value in this node
-        self.current_index += 1;
+        let mut hnode = self.current_hnode.as_ref().unwrap().clone();
+        let mut index = self.current_index + 1;
 
         // Advance to the next leaf node if necessary
-        let mut current_hnode = self.current_hnode.as_ref().unwrap().clone();
-        let mut current_node_read_lock = current_hnode.read_lock();
-        if self.current_index >= current_node_read_lock.values.len() {
-            self.current_hnode = self.based_on_view.get_next_leaf_hnode(&current_hnode); // BUG this tries to take a write lock while we have a read lock
-            self.current_index = 0;
-
-            let current_node = match &self.current_hnode { 
-                Some(current_hnode_unwrapped) => current_hnode_unwrapped.read_lock(),
+        let mut go_to_next_leaf = false;
+        {
+            let node_read_lock = hnode.read_lock();
+            if index >= node_read_lock.values.len() {
+                go_to_next_leaf = true;
+            }
+        }
+        if go_to_next_leaf {
+            hnode = match self.based_on_view.get_next_leaf_hnode(&hnode) {
+                Some(next_hnode) => next_hnode,
                 None => { return None; }
             };
+            index = 0;
         }
 
-        if self.current_index < current_node_read_lock.values.len() {
-            Option::Some(current_node_read_lock.values[self.current_index])
-        }
-        else {
+        self.current_hnode = Some(hnode.clone());
+        self.current_index = index;
+
+        let node_read_lock = hnode.read_lock();
+        if self.current_index >= node_read_lock.values.len() {
             Option::None
+        } else {
+            Option::Some(node_read_lock.values[self.current_index])
         }
     }
 }

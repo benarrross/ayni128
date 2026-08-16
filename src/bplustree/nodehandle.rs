@@ -14,21 +14,28 @@ use super::node::*;
 
 
 #[derive(Debug, Clone)]
-pub struct NodeHandle<const K: usize>(Arc<RwLock<Node<K>>>);
+pub struct NodeHandle<const K: usize> {
+    node_debug_id: u32,
+    node_lock: Arc<RwLock<Node<K>>> 
+}
 
 
 impl<const K: usize> NodeHandle<K> {
     
-    pub fn new(inner: Node<K>) -> Self {
-        NodeHandle(Arc::new(RwLock::new(inner)))
+    pub fn new(node: Node<K>) -> Self {
+
+        NodeHandle {
+            node_debug_id: node.debug_id,
+            node_lock: Arc::new(RwLock::new(node))
+        }
     }
 
     pub fn read_lock(&self) -> std::sync::RwLockReadGuard<'_, Node<K>> {
-        self.0.read().unwrap()
+        self.node_lock.read().unwrap()
     }
 
     pub fn write_lock(&self) -> std::sync::RwLockWriteGuard<'_, Node<K>> {
-        self.0.write().unwrap()
+        self.node_lock.write().unwrap()
     }
 }
 
