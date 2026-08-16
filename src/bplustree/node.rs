@@ -1,4 +1,5 @@
 #![allow(unused)]
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::cell::RefCell;
 use std::fmt;
 use std::mem;
@@ -21,12 +22,12 @@ pub enum SplitResult<const K:usize> {
 
 
 // This is only used for debugging
-static mut NEXT_NODE_DEBUG_ID: u32  = 1;
+static NEXT_NODE_DEBUG_ID: AtomicUsize  = AtomicUsize::new(1);
 
 
 #[derive(Debug)]
 pub struct Node<const K: usize> {
-    pub debug_id: u32,
+    pub debug_id: usize,
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<NodeLink<K>>>,
@@ -37,16 +38,8 @@ pub struct Node<const K: usize> {
 // NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
 impl<const K: usize> Clone for Node<K> {
     fn clone(&self) -> Self {
-
-        // NYI use atomic increment instead of unsafe
-        let mut debug_id: u32 = 0;
-        unsafe {
-            debug_id = NEXT_NODE_DEBUG_ID;
-            NEXT_NODE_DEBUG_ID += 1;
-        }
-
         Node {
-            debug_id: debug_id,
+            debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             id: self.id.clone(),
             values: self.values.clone(),
             children: self.children.clone(),
@@ -59,16 +52,8 @@ impl<const K: usize> Clone for Node<K> {
 impl<const K: usize> Node<K> {  
 
     pub fn empty_leaf() -> Self {
-    
-        // NYI use atomic increment instead of unsafe
-        let mut debug_id: u32 = 0;
-        unsafe {
-            debug_id = NEXT_NODE_DEBUG_ID;
-            NEXT_NODE_DEBUG_ID += 1;
-        }
-
-        Node {
-            debug_id: debug_id,
+            Node {
+            debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             id: None,
             values: SortedArray::new(),
             children: None,
@@ -78,17 +63,9 @@ impl<const K: usize> Node<K> {
 
 
     pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> NodeHandle<K> {
-        
-        // NYI use atomic increment instead of unsafe
-        let mut debug_id: u32 = 0;
-        unsafe {
-            debug_id = NEXT_NODE_DEBUG_ID;
-            NEXT_NODE_DEBUG_ID += 1;
-        }
-
         NodeHandle::new(
             Node {
-                debug_id: debug_id,
+                debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
                 id: None,
                 values: values,
                 children: None,
@@ -98,17 +75,9 @@ impl<const K: usize> Node<K> {
 
 
     pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLink<K>>) -> NodeHandle<K> {
-
-        // NYI use atomic increment instead of unsafe
-        let mut debug_id: u32 = 0;
-        unsafe {
-            debug_id = NEXT_NODE_DEBUG_ID;
-            NEXT_NODE_DEBUG_ID += 1;
-        }
-
         NodeHandle::new(
             Node { 
-                debug_id: debug_id,
+                debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
                 id: None,
                 values: values,
                 children: Some(children),
