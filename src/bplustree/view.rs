@@ -41,7 +41,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets the next value greater than or equal to the specified value.
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.root_node_link.borrow().get(&self.based_on);
+        let hnode = self.root_node_link.borrow().get_immutable(&self.based_on);
         self.get_from_node(&hnode.read_lock(), value)
     }
 
@@ -60,7 +60,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
-        let root_hnode = self.root_node_link.borrow().get(&self.based_on);
+        let root_hnode = self.root_node_link.borrow().get_immutable(&self.based_on);
         RangeCollection::new(self, root_hnode, min, mac)
     }   
 
@@ -78,7 +78,7 @@ impl<'a, const K: usize> View<'a, K> {
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode_from_outer_link(&mut self.root_node_link.borrow_mut());
         if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
-           *self.root_node_link.borrow_mut() = NodeLink::edited(
+           *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
     }
@@ -92,8 +92,8 @@ impl<'a, const K: usize> View<'a, K> {
         Node::new_branch(
             SortedArray::from_values(vec![right_node.values[0]]),
             vec![
-                NodeLink::edited(left_hnode.clone()),
-                NodeLink::edited(right_hnode.clone()) 
+                NodeLink::mutable(left_hnode.clone()),
+                NodeLink::mutable(right_hnode.clone()) 
             ])
     }
 
@@ -107,7 +107,7 @@ impl<'a, const K: usize> View<'a, K> {
         let new_right_hnode = Node::new_leaf(right_values, node.next.clone());
 
         // Link the node we just split from to the new node in the leaf node linked list
-        node.next = NodeLink::edited(new_right_hnode.clone());
+        node.next = NodeLink::mutable(new_right_hnode.clone());
         new_right_hnode
     }
 
@@ -144,7 +144,7 @@ impl<'a, const K: usize> View<'a, K> {
 
                 let right_node = &*right_hnode.read_lock();
                 node.values.insert(right_node.values[0]);
-                node.children.as_mut().unwrap().insert(index, NodeLink::edited(right_hnode.clone()));
+                node.children.as_mut().unwrap().insert(index, NodeLink::mutable(right_hnode.clone()));
 
                 // Now see if we need to split
                 if (node.values.len() > K) {
@@ -162,7 +162,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        child_link.get(&self.based_on)
+        child_link.get_immutable(&self.based_on)
     }
 
 
@@ -195,7 +195,7 @@ impl<'a, const K: usize> View<'a, K> {
         if node_read.next.is_empty() {
             Option::None
         } else {
-            Option::Some(node_read.next.get(&self.based_on))
+            Option::Some(node_read.next.get_immutable(&self.based_on))
         }
     }
 

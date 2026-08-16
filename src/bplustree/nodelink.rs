@@ -14,17 +14,24 @@ use super::nodehandle::*;
 
 
 #[derive(Debug, Clone)]
-enum NodeLinkInner<const K: usize> {
+enum NodeLinkKind<const K: usize> {
+    /// Link to no node
     Empty,
+
+    /// Link to a node that hasn't been loaded from storage yet
     Unloaded(BlobId),
-    Loaded(NodeHandle<K>),
-    Edited(NodeHandle<K>)
+
+    /// Link to a immutable node
+    Immutable(NodeHandle<K>),
+
+    /// Link to a mutable node
+    Mutable(NodeHandle<K>)
 }
 
 
 #[derive(Debug)]
 pub struct NodeLink<const K:usize> {
-    inner: RwLock<NodeLinkInner<K>>
+    inner: RwLock<NodeLinkKind<K>>
 }
 
 
@@ -41,43 +48,44 @@ impl<const K: usize> Clone for NodeLink<K> {
 impl<const K: usize> NodeLink<K> {
     
     pub fn empty() -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkInner::Empty) }
+        NodeLink { inner: RwLock::new(NodeLinkKind::Empty) }
     }
 
-    pub fn loaded(value: NodeHandle<K>) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkInner::Loaded(value)) }
+    pub fn immutable(value: NodeHandle<K>) -> Self {
+        NodeLink { inner: RwLock::new(NodeLinkKind::Immutable(value)) }
     }
 
-    pub fn edited(value: NodeHandle<K>) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkInner::Edited(value)) }
+    pub fn mutable(value: NodeHandle<K>) -> Self {
+        NodeLink { inner: RwLock::new(NodeLinkKind::Mutable(value)) }
     }
 
-    pub fn blobid(value: BlobId) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkInner::Unloaded(value)) }
+    pub fn unloaded(value: BlobId) -> Self {
+        NodeLink { inner: RwLock::new(NodeLinkKind::Unloaded(value)) }
     }
 
     pub fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
-        matches!(*read_lock, NodeLinkInner::Empty )
+        matches!(*read_lock, NodeLinkKind::Empty )
     }
 
-    /// Gets a node handle from a link, loading the node from storage if necessary.
-    pub fn get(&self, based_on: &BPlusTree<'_, K>) -> NodeHandle<K> {
 
-        let mut new_inner = NodeLinkInner::Empty;
+    /// Gets a node handle from a link, loading the node from storage if necessary.
+    pub fn get_immutable(&self, based_on: &BPlusTree<'_, K>) -> NodeHandle<K> {
+
+        let mut new_inner = NodeLinkKind::Empty;
 
         let loaded_hnode = match &*self.inner.read().unwrap() {
-            NodeLinkInner::Unloaded(id) => {
+            NodeLinkKind::Unloaded(id) => {
                 let hnode = based_on.load_node(&self);
-                new_inner = NodeLinkInner::Edited(hnode.clone());
+                new_inner = NodeLinkKind::Mutable(hnode.clone());
                 hnode
             },
-            NodeLinkInner::Loaded(hnode) => hnode.clone(),
-            NodeLinkInner::Edited(hnode) => hnode.clone(),
-            NodeLinkInner::Empty => panic!("Can't get an empty node link")
+            NodeLinkKind::Immutable(hnode) => hnode.clone(),
+            NodeLinkKind::Mutable(hnode) => hnode.clone(),
+            NodeLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if matches!(&new_inner, NodeLinkInner::Unloaded(new_inner)) {
+        if matches!(&new_inner, NodeLinkKind::Unloaded(new_inner)) {
             *self.inner.write().unwrap() = new_inner;
         }
 
@@ -89,29 +97,29 @@ impl<const K: usize> NodeLink<K> {
     /// This should ONLY be used by views when editing the tree.
     pub fn get_mutable(&self, based_on: &BPlusTree<'_, K>) -> NodeHandle<K> {
 
-        let mut new_inner = NodeLinkInner::Empty;
+        let mut new_inner = NodeLinkKind::Empty;
 
         let loaded_hnode = match &*self.inner.read().unwrap() {
-            NodeLinkInner::Unloaded(id) => {
+            NodeLinkKind::Unloaded(id) => {
                 let loaded_hnode = based_on.load_node(&self);
                 let mutable_node = loaded_hnode.read_lock().clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkInner::Edited(mutable_hnode.clone());
+                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
                 mutable_hnode
             },
-            NodeLinkInner::Loaded(hnode) => {
+            NodeLinkKind::Immutable(hnode) => {
                 let mutable_node = hnode.read_lock().clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkInner::Edited(mutable_hnode.clone());
+                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
                 mutable_hnode
             },
-            NodeLinkInner::Edited(hnode) => hnode.clone(),
-            NodeLinkInner::Empty => panic!("Can't get an empty node link")
+            NodeLinkKind::Mutable(hnode) => hnode.clone(),
+            NodeLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if matches!(&new_inner, NodeLinkInner::Unloaded(new_inner)) {
+        if matches!(&new_inner, NodeLinkKind::Unloaded(new_inner)) {
             *self.inner.write().unwrap() = new_inner;
-        } else if matches!(&new_inner, NodeLinkInner::Loaded(new_inner)) {
+        } else if matches!(&new_inner, NodeLinkKind::Immutable(new_inner)) {
             *self.inner.write().unwrap() = new_inner;
         }
         

@@ -54,8 +54,8 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
     fn get_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
         match self.loaded_hnodes.borrow().get(&blobid) {
-            Some(loaded_hnode) => NodeLink::loaded(loaded_hnode.clone()),
-            None => NodeLink::blobid(blobid) // NYI need to actually load the node
+            Some(loaded_hnode) => NodeLink::immutable(loaded_hnode.clone()),
+            None => NodeLink::unloaded(blobid) // NYI need to actually load the node
         }
     }
 
