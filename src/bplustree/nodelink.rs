@@ -21,17 +21,17 @@ enum NodeLinkKind<const K: usize> {
     /// Link to a node that hasn't been loaded from storage yet
     Unloaded(BlobId),
 
-    /// Link to a immutable node
+    /// Link to a node that has not been modified in the current view
     Immutable(NodeHandle<K>),
 
-    /// Link to a mutable node
+    /// Link to a node that has been modified in the current view
     Mutable(NodeHandle<K>)
 }
 
 
 #[derive(Debug)]
 pub struct NodeLink<const K:usize> {
-    inner: RwLock<NodeLinkKind<K>>
+    inner: RwLock<NodeLinkKind<K>>  // NYI would a Mutex be faster?
 }
 
 
@@ -118,6 +118,8 @@ impl<const K: usize> NodeLink<K> {
         };
 
         if !matches!(&new_inner, NodeLinkKind::Empty) {
+            // NYI need to make sure nobody else set this between the release of the read lock and
+            // aquisition of the write lock
             *self.inner.write().unwrap() = new_inner;
         }
         

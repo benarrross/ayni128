@@ -17,7 +17,7 @@ use super::rangeiterator::{*};
 
 pub struct View<'a, const K: usize> {
     based_on: &'a BPlusTree<'a, K>,
-    root_node_link: RefCell<NodeLink<K>>,
+    root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
     puts: RefCell<SortedArray<u128>>,
     deletes: RefCell<SortedArray<u128>>
 }
@@ -48,7 +48,8 @@ impl<'a, const K: usize> View<'a, K> {
 
     fn get_from_node(&self, node: &Node<K>, value: u128) -> u128 {
         if (node.is_leaf()) {
-            node.values.find(value)
+            // NYI this should use find_range_index and go to the next node when necessary
+            node.values.find(value, u128::MAX)
         }
         else {
             let index = node.values.find_range_index(value);
@@ -174,20 +175,6 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    // pub(super) fn get_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
-    //     match node_link {
-    //         NodeLinkInner::Unloaded(id) => {
-    //             let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
-    //             *node_link = NodeLinkInner::Loaded(hnode.clone());
-    //             hnode
-    //         },
-    //         NodeLinkInner::Loaded(hnode) => hnode.clone(),
-    //         NodeLinkInner::Edited(hnode) => hnode.clone(),
-    //         NodeLinkInner::Empty => panic!("NYI")
-    //     }
-    // }
-
-
     /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
     pub(super) fn get_next_leaf_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
         let mut node_read = hnode.read_lock();
@@ -204,28 +191,5 @@ impl<'a, const K: usize> View<'a, K> {
     fn get_mutable_hnode_from_outer_link(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
         node_link.get_mutable(self.based_on)
     }
-
-
-    // /// Gets a mutable copy of the node and updates the passed in link if necesssary
-    // fn get_mutable_hnode_from_link_deprecate(&self, node_link: &mut NodeLinkInner<K>) -> NodeHandle<K> {
-
-    //     match node_link {
-    //         NodeLinkInner::Unloaded(id) => {
-    //             let hnode = self.based_on.get_hnode_from_link_deprecate(node_link);
-    //             let mutable_node = hnode.read_lock().clone();
-    //             let mutable_hnode = NodeHandle::new(mutable_node);
-    //             *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
-    //             mutable_hnode
-    //         },
-    //         NodeLinkInner::Loaded(hnode) => {
-    //             let mutable_node = hnode.read_lock().clone();
-    //             let mutable_hnode = NodeHandle::new(mutable_node);
-    //             *node_link = NodeLinkInner::Edited(mutable_hnode.clone());
-    //             mutable_hnode
-    //         },
-    //         NodeLinkInner::Edited(hnode) => hnode.clone(),
-    //         NodeLinkInner::Empty => panic!("Can't make an empty node link mutable")
-    //     }
-    // }
 }
 

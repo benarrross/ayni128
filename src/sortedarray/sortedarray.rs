@@ -54,10 +54,16 @@ impl<T: Copy + Ord> SortedArray<T> {
     }
 
 
-    pub fn find(&self, value: T) -> T {
+    pub fn find(&self, value: T, max_value: T) -> T {
         match self.values.binary_search(&value) {
             Ok(index) => self.values[index],
-            Err(index) => self.values[index], // NYI if index is off the end, return a max value (pass it in?)
+            Err(index) => {
+                if (index >= self.values.len()) {
+                    max_value
+                } else {
+                    self.values[index]
+                }
+            }
         }
     }
 
