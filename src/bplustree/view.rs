@@ -69,7 +69,7 @@ impl<'a, const K: usize> View<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(&self.based_on);
-        if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_root_hnode.write_lock(), value) {
+        if let SplitResult::Split(right_hnode) = Self::insert_and_split(&mut mutable_root_hnode.write_lock(), value, &self.based_on) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 Self::create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
@@ -82,7 +82,7 @@ impl<'a, const K: usize> View<'a, K> {
         // Make a new parent node that has the old node on its left and the new node on its right
         let right_node = &*right_hnode.read_lock();
         Node::new_branch(
-            SortedArray::from_values(vec![right_node.values[0]]),
+            SortedArray::from_values(vec![right_node.values[0]]),   // NYI This is wrong for branch nodes -- need a node.first_value() method
             vec![
                 NodeLink::mutable(left_hnode.clone()),
                 NodeLink::mutable(right_hnode.clone()) 
@@ -114,7 +114,7 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     /// Inserts a value into a node and splits it if necessary.
-    fn insert_and_split(&self, node: &mut Node<K>, value : u128) -> SplitResult<K> {
+    fn insert_and_split(node: &mut Node<K>, value : u128, based_on: &BPlusTree<'_, K>) -> SplitResult<K> {
         if node.is_leaf() {
             node.values.insert(value);
 
@@ -127,13 +127,16 @@ impl<'a, const K: usize> View<'a, K> {
         else {
             // Find the child this should go in and ask the child to insert the value
             let index = node.values.find_range_index(value);
-            let mut mutable_child_hnode = self.get_mutable_child_hnode(node, index);
+            let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable(&based_on);
 
             // Handle the child splitting (which might force us to split the current node also)
-            if let SplitResult::Split(right_hnode) = self.insert_and_split(&mut mutable_child_hnode.write_lock(), value) {
+            if let SplitResult::Split(right_hnode) = Self::insert_and_split(&mut mutable_child_hnode.write_lock(), value, based_on) {
 
                 let right_node = &*right_hnode.read_lock();
-                node.values.insert(right_node.values[0]);
+                let first_value_in_right_node = right_node.values[0];  // NYI This is wrong for branch nodes -- need a node.first_value() method
+                node.values.insert(first_value_in_right_node);
+
+                // NYI index is wrong here, I think? Perhaps just add one?
                 node.children.as_mut().unwrap().insert(index, NodeLink::mutable(right_hnode.clone()));
 
                 // Now see if we need to split

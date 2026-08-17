@@ -22,6 +22,7 @@ enum NodeLinkKind<const K: usize> {
 
 #[derive(Debug)]
 pub struct NodeLink<const K:usize> {
+    // NYI make a name string for debugging that shows what this link points to in the debugger
     inner: RwLock<NodeLinkKind<K>>  // NYI would a Mutex be faster?
 }
 
