@@ -159,14 +159,6 @@ impl<'a, const K: usize> View<'a, K> {
     }
 
 
-    /// Gets a handle to a child and ensures it is mutable. Clones it into the current
-    /// transaction if necessary. Updates the NodeLink in the passed in node if necessary.
-    fn get_mutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
-        let child_link = &node.children.as_ref().unwrap()[index];
-        child_link.get_mutable(&self.based_on)
-    }
-
-
     /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
     pub(super) fn get_next_leaf_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
         let mut node_read = hnode.read_lock();
