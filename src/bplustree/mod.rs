@@ -1,4 +1,5 @@
 mod bplustree;
+mod editor;
 mod node;
 mod nodehandle;
 mod nodelink;
