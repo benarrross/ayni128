@@ -37,16 +37,16 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
 
     pub fn get_view(&'a self) -> View<'a, K> {
-        View::new(self, self.get_link_to_loaded_node(self.root_id))
+        View::new(self, self.create_link_to_loaded_node(self.root_id))
     }
 
 
-    pub fn commit(&self, view: View<'a, K>) {
+    pub fn commit(&self, view: &View<'a, K>) {
         panic!("NYI");
     }
 
 
-    fn get_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
+    fn create_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
         match self.loaded_hnodes.borrow().get(&blobid) {
             Some(loaded_hnode) => NodeLink::immutable(loaded_hnode.clone()),
             None => NodeLink::unloaded(blobid) // NYI need to actually load the node
