@@ -21,7 +21,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// You must commit the view for your changes to be saved.
     pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
         View { 
-            based_on, 
+            based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),
             puts: RefCell::new(SortedArray::new()),
             deletes: RefCell::new(SortedArray::new())
@@ -32,7 +32,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets the next value greater than or equal to the specified value.
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.root_node_link.borrow().get_immutable(&self.based_on);
+        let hnode = self.root_node_link.borrow().get_immutable(self.based_on);
         self.get_from_node(&hnode.read_lock(), value)
     }
 
@@ -52,7 +52,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
-        let root_hnode = self.root_node_link.borrow().get_immutable(&self.based_on);
+        let root_hnode = self.root_node_link.borrow().get_immutable(self.based_on);
         RangeCollection::new(self, root_hnode, min, mac)
     }   
 
@@ -68,8 +68,8 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(&self.based_on);
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, &self.based_on) {
+        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(self.based_on);
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
@@ -79,7 +79,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        child_link.get_immutable(&self.based_on)
+        child_link.get_immutable(self.based_on)
     }
 
 
@@ -90,7 +90,7 @@ impl<'a, const K: usize> View<'a, K> {
         if node_read.next.is_empty() {
             Option::None
         } else {
-            Option::Some(node_read.next.get_immutable(&self.based_on))
+            Option::Some(node_read.next.get_immutable(self.based_on))
         }
     }
 }
@@ -111,7 +111,7 @@ fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: No
 
 
 /// Inserts a value into a node and splits it if necessary.
-fn insert_and_split<const K:usize>(node: &mut Node<K>, value : u128, based_on: &BPlusTree<'_, K>) -> SplitResult<K> {
+fn insert_and_split<const K:usize>(node: &mut Node<K>, value : u128, node_store: &dyn NodeStore<K>) -> SplitResult<K> {
     if node.is_leaf() {
         node.values.insert(value);
 
@@ -124,10 +124,10 @@ fn insert_and_split<const K:usize>(node: &mut Node<K>, value : u128, based_on: &
     else {
         // Find the child this should go in and ask the child to insert the value
         let index = node.values.find_range_index(value);
-        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable(&based_on);
+        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable(node_store);
 
         // Handle the child splitting (which might force us to split the current node also)
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, based_on) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, node_store) {
 
             let right_node = &*right_hnode.read_lock();
             let first_value_in_right_node = right_node.values[0];  // NYI This is wrong for branch nodes -- need a node.first_value() method
