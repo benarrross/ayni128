@@ -11,8 +11,8 @@ use super::rangeiterator::{*};
 pub struct View<'a, const K: usize> {
     based_on: &'a BPlusTree<'a, K>,
     root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
-    puts: RefCell<SortedArray<u128>>,
-    deletes: RefCell<SortedArray<u128>>
+    pub(super) puts: RefCell<SortedArray<u128>>,
+    pub(super) deletes: RefCell<SortedArray<u128>>
 }
 
 
@@ -52,9 +52,9 @@ impl<'a, const K: usize> View<'a, K> {
 
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
-    pub fn iter(&'a self, min: u128, mac: u128) -> RangeCollection<'a, K> {
+    pub fn iter(&'a self, min: u128, mac: u128) -> RangeIterator<'a, K> {
         let root_hnode = self.root_node_link.borrow().get_immutable(self.based_on);
-        RangeCollection::new(self, root_hnode, min, mac)
+        RangeIterator::new(self, root_hnode, min, mac)
     }   
 
 

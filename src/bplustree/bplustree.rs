@@ -9,7 +9,7 @@ use super::View;
 
 
 pub struct BPlusTree<'a, const K: usize> {
-    root_id: BlobId,    // NYI change this to root: NodeLink<K>
+    root_id: BlobId,    // NYI change this to root: NodeLink<K>, perhaps in a mutex
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: &'a mut BlobStore<'a>
 }
@@ -42,7 +42,33 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
 
     pub fn commit(&self, view: &View<'a, K>) {
-        panic!("NYI");
+
+        // NYI wrap this in a lock so only one instance can run at a time
+        // Perhaps put a mutex around root_id? Or is the write lock on root
+        // good enough?
+
+        // Get a write lock on our root node since we are going to modify it
+        let root_link = self.create_link_to_loaded_node(self.root_id);
+        let mutable_root_hnode = root_link.get_mutable(self);
+        let root_node_write_lock = &mut mutable_root_hnode.write_lock();
+
+        // Insert all new values into the committed b+tree
+        let inserted_values = view.puts.borrow();
+        for value in inserted_values.iter() {
+            // NYI handle splits
+            super::editor::insert_and_split(root_node_write_lock, *value, self);
+
+        // if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
+        //    *self.root_node_link.borrow_mut() = NodeLink::mutable(
+        //         create_branch_node(&mutable_root_hnode, right_hnode.clone()));
+        }
+
+        // Remove all deleted values from the committed b+tree
+        // NYI
+
+        // Write the edited nodes to storage
+        // NYI
+        
     }
 
 

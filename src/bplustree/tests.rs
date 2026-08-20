@@ -103,17 +103,23 @@ fn insert_many_in_order() {
 
         assert_eq!(value as u128, view.get(value as u128));
 
-        let mut iter = view.iter(0, u128::MAX).into_iter();
+        let mut iter = view.iter(0, u128::MAX);
         for value in 0..inserted_count {
             assert_eq!(value as u128, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
 
-        assert_eq!(0, view_before.iter(0, u128::MAX).into_iter().count());
+        assert_eq!(0, view_before.iter(0, u128::MAX).count());
     }
 
     // Commit and ensure we can see 99
-    // list.commit(view);
+    list.commit(&view);
+    let edited_view = list.get_view();
+    let mut iter = view.iter(0, u128::MAX);
+    for value in 0..inserted_count {
+        assert_eq!(value as u128, iter.next().unwrap());
+    }
+
     // for item in list.get_view().iter(0, u128::MAX) {
     //     assert_eq!(99, item);
     // }
