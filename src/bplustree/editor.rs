@@ -24,10 +24,10 @@ pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value : u128, node_st
 
             let right_node = &*right_hnode.read_lock();
             let first_value_in_right_node = right_node.values[0];  // NYI This is wrong for branch nodes -- need a node.first_value() method
-            node.values.insert(first_value_in_right_node);
 
-            // NYI index is wrong here, I think? Perhaps just add one?
-            node.children.as_mut().unwrap().insert(index, NodeLink::mutable(right_hnode.clone()));
+            node.values.insert(first_value_in_right_node);
+            let new_child_index = node.values.find_range_index(first_value_in_right_node);
+            node.children.as_mut().unwrap().insert(new_child_index, NodeLink::mutable(right_hnode.clone()));
 
             // Now see if we need to split
             if (node.values.len() > K) {
@@ -48,10 +48,10 @@ fn split_leaf_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
     // Make a new right node
     let split_index = node.values.len() / 2;
     let right_values = node.values.split_off(split_index);
-    let new_right_hnode = Node::new_leaf(right_values, node.next.clone());
+    let new_right_hnode = Node::new_leaf(right_values, node.next_link.clone());
 
     // Link the node we just split from to the new node in the leaf node linked list
-    node.next = NodeLink::mutable(new_right_hnode.clone());
+    node.next_link = NodeLink::mutable(new_right_hnode.clone());
     new_right_hnode
 }
 

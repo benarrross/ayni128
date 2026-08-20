@@ -85,7 +85,8 @@ fn insert_several() {
     // }
 }
 
-
+// NYI make another test for inserting non-contiguous nodes out-of-order,
+// and test getting the number before each one to ensure we are chasing values between leaf nodes correctly.
 #[test]
 fn insert_many_in_order() {
     const K:usize = 4;
@@ -101,15 +102,16 @@ fn insert_many_in_order() {
         view.put(value as u128);
         inserted_count += 1;
 
-        assert_eq!(value as u128, view.get(value as u128));
-
         let mut iter = view.iter(0, u128::MAX);
         for value in 0..inserted_count {
             assert_eq!(value as u128, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
 
+        assert_eq!(value as u128, view.get(value as u128));
+
         assert_eq!(0, view_before.iter(0, u128::MAX).count());
+        assert_eq!(u128::MAX, view_before.get(value as u128));
     }
 
     // Commit and ensure we can see 99

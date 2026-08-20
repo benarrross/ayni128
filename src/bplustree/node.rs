@@ -22,7 +22,7 @@ pub struct Node<const K: usize> {
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<NodeLink<K>>>,
-    pub next : NodeLink<K>
+    pub next_link : NodeLink<K>
 }
 
 
@@ -34,7 +34,7 @@ impl<const K: usize> Clone for Node<K> {
             id: self.id.clone(),
             values: self.values.clone(),
             children: self.children.clone(),
-            next: self.next.clone(),
+            next_link: self.next_link.clone(),
         }
     }
 }
@@ -48,7 +48,7 @@ impl<const K: usize> Node<K> {
             id: None,
             values: SortedArray::new(),
             children: None,
-            next: NodeLink::empty() 
+            next_link: NodeLink::empty() 
         }
     }
 
@@ -60,7 +60,7 @@ impl<const K: usize> Node<K> {
                 id: None,
                 values: values,
                 children: None,
-                next: next 
+                next_link: next 
             })
     }
 
@@ -72,7 +72,7 @@ impl<const K: usize> Node<K> {
                 id: None,
                 values: values,
                 children: Some(children),
-                next: NodeLink::empty() 
+                next_link: NodeLink::empty() 
             })
     }   
 
