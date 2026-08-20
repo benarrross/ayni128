@@ -2,33 +2,6 @@ use super::view::*;
 use super::nodehandle::*;
 
 
-pub struct RangeCollection<'a, const K: usize> {
-    based_on: &'a View<'a, K>,
-    root_node: NodeHandle<K>,
-    min: u128,
-    mac: u128
-}
-
-
-impl<'a, const K: usize> RangeCollection<'a,  K> {
-
-    pub fn new(based_on: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
-        RangeCollection { 
-            based_on, 
-            root_node: root_node, 
-            min: min, 
-            mac: mac  }
-    }
-}
-
-
-impl<'a, const K: usize> IntoIterator for RangeCollection<'a, K> {
-    type Item = u128;
-    type IntoIter = RangeIterator<'a, K>;
-    fn into_iter(self) -> Self::IntoIter { RangeIterator::new(self.based_on, self.root_node, self.min, self.mac) }
-}
-
-
 pub struct RangeIterator<'a, const K: usize> {
     based_on_view: &'a View<'a, K>,
     root_hnode: NodeHandle<K>,
@@ -145,6 +118,6 @@ impl<'a, const K: usize> Iterator for RangeIterator<'a, K> {
             None => self.find_first(),
             Some(node) => self.find_next()
         }
-    }
+    }   
 }
 
