@@ -78,6 +78,12 @@ impl<T: Copy + Ord> SortedArray<T> {
 
 
     pub fn len(&self) -> usize { self.values.len() }
+
+    pub fn iter(&self) -> SortedArrayIterator<'_, T> {
+        SortedArrayIterator {
+            inner: self.values.iter()
+        }
+    }
 }
 
 
@@ -86,3 +92,17 @@ impl<T: Copy + Ord> Index<usize> for SortedArray<T> {
     fn index(&self, index: usize) -> &Self::Output { &self.values[index] }
 }
 
+
+pub struct SortedArrayIterator<'a, T : Copy + Ord> { 
+    inner: std::slice::Iter<'a, T>,
+}
+
+
+impl<'a, T: Copy + Ord> Iterator for SortedArrayIterator<'a, T> {
+
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
+    }   
+}
