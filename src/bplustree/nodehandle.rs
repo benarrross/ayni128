@@ -4,7 +4,7 @@ use super::node::*;
 
 #[derive(Debug, Clone)]
 pub struct NodeHandle<const K: usize> {
-    node_debug_id: usize,               // NYI limit this to only exist when running tests
+    pub node_debug_id: usize,               // NYI limit this to only exist when running tests
     node_lock: Arc<RwLock<Node<K>>>     // NYI would this be faster as a Mutex? Or could this be a Box or RefCell?
 }
 

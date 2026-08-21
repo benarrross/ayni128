@@ -79,7 +79,7 @@ impl<'a, const K: usize> View<'a, K> {
         let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(self.based_on);
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
-                create_branch_node(&mutable_root_hnode, right_hnode.clone()));
+                &create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
     }
 
@@ -114,8 +114,8 @@ fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: No
     Node::new_branch(
         SortedArray::from_values(vec![right_node.values[0]]),   // NYI This is wrong for branch nodes -- need a node.first_value() method
         vec![
-            NodeLink::mutable(left_hnode.clone()),
-            NodeLink::mutable(right_hnode.clone()) 
+            NodeLink::mutable(&left_hnode),
+            NodeLink::mutable(&right_hnode) 
         ])
 }
 

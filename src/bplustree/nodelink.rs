@@ -28,7 +28,7 @@ pub trait NodeStore<const K: usize> {
 
 #[derive(Debug)]
 pub struct NodeLink<const K:usize> {
-    // NYI make a name string for debugging that shows what this link points to in the debugger
+    label: String,
     inner: RwLock<NodeLinkKind<K>>  // NYI would a Mutex be faster?
 }
 
@@ -36,7 +36,8 @@ pub struct NodeLink<const K:usize> {
 impl<const K: usize> Clone for NodeLink<K> {
     fn clone(&self) -> Self {
         NodeLink { 
-            inner: RwLock::new(self.inner.read().unwrap().clone())
+            inner: RwLock::new(self.inner.read().unwrap().clone()),
+            label: self.label.clone()
         }
     }
 }
@@ -46,26 +47,37 @@ impl<const K: usize> Clone for NodeLink<K> {
 impl<const K: usize> NodeLink<K> {
     
     pub fn empty() -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkKind::Empty) }
+        NodeLink { 
+            inner: RwLock::new(NodeLinkKind::Empty),
+            label: format!("empty")
+        }
     }
 
-    pub fn immutable(value: NodeHandle<K>) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkKind::Immutable(value)) }
+    pub fn immutable(value: &NodeHandle<K>) -> Self {
+        NodeLink { 
+            inner: RwLock::new(NodeLinkKind::Immutable(value.clone())),
+            label: format!("immutable {}", &value.node_debug_id)
+        }
     }
 
-    pub fn mutable(value: NodeHandle<K>) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkKind::Mutable(value)) }
+    pub fn mutable(value: &NodeHandle<K>) -> Self {
+        NodeLink { 
+            inner: RwLock::new(NodeLinkKind::Mutable(value.clone())),
+            label: format!("mutable {}", &value.node_debug_id)
+        }
     }
 
     pub fn unloaded(value: BlobId) -> Self {
-        NodeLink { inner: RwLock::new(NodeLinkKind::Unloaded(value)) }
+        NodeLink {
+            inner: RwLock::new(NodeLinkKind::Unloaded(value)),
+            label: format!("unloaded {}", value)
+        }
     }
 
     pub fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
         matches!(*read_lock, NodeLinkKind::Empty )
     }
-
 
     /// Gets a node handle from a link, loading the node from storage if necessary.
     pub fn get_immutable(&self, node_store: &dyn NodeStore<K>) -> NodeHandle<K> {

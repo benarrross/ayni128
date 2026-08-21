@@ -30,3 +30,9 @@ impl From<std::num::NonZeroU64> for BlobId {
         BlobId { 0: value as std::num::NonZeroU64 }
     }
 }
+
+impl fmt::Display for BlobId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "({})", self.0)
+    }
+}

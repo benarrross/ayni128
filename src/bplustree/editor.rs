@@ -27,7 +27,7 @@ pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value : u128, node_st
 
             node.values.insert(first_value_in_right_node);
             let new_child_index = node.values.find_range_index(first_value_in_right_node);
-            node.children.as_mut().unwrap().insert(new_child_index, NodeLink::mutable(right_hnode.clone()));
+            node.children.as_mut().unwrap().insert(new_child_index, NodeLink::mutable(&right_hnode));
 
             // Now see if we need to split
             if (node.values.len() > K) {
@@ -51,7 +51,7 @@ fn split_leaf_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
     let new_right_hnode = Node::new_leaf(right_values, node.next_link.clone());
 
     // Link the node we just split from to the new node in the leaf node linked list
-    node.next_link = NodeLink::mutable(new_right_hnode.clone());
+    node.next_link = NodeLink::mutable(&new_right_hnode);
     new_right_hnode
 }
 

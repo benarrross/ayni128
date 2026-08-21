@@ -68,13 +68,13 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 
         // Write the edited nodes to storage
         // NYI
-        
+
     }
 
 
     fn create_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
         match self.loaded_hnodes.borrow().get(&blobid) {
-            Some(loaded_hnode) => NodeLink::immutable(loaded_hnode.clone()),
+            Some(loaded_hnode) => NodeLink::immutable(loaded_hnode),
             None => NodeLink::unloaded(blobid) // NYI need to actually load the node
         }
     }

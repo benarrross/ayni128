@@ -93,36 +93,35 @@ fn insert_many_in_order() {
     let mut memory_buffer = MemoryStream::new();
     let mut blobs = BlobStore::new(& mut memory_buffer);
     let mut list = BPlusTree::<K>::new(&mut blobs);
+    let mut inserted_count = 0;
+
+    let view_v0 = list.get_view();
 
     // Insert enough nodes that we need to do three splits
-    let view = list.get_view();
-    let view_before = list.get_view();
-    let mut inserted_count = 0;
+    let view_v1 = list.get_view();
     for value in 0..K*20 {
-        view.put(value as u128);
+        view_v1.put(value as u128);
         inserted_count += 1;
 
-        let mut iter = view.iter(0, u128::MAX);
+        let mut iter = view_v1.iter(0, u128::MAX);
         for value in 0..inserted_count {
             assert_eq!(value as u128, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
 
-        assert_eq!(value as u128, view.get(value as u128));
+        assert_eq!(value as u128, view_v1.get(value as u128));
 
-        assert_eq!(0, view_before.iter(0, u128::MAX).count());
-        assert_eq!(u128::MAX, view_before.get(value as u128));
+        assert_eq!(0, view_v0.iter(0, u128::MAX).count());
+        assert_eq!(u128::MAX, view_v0.get(value as u128));
     }
 
-    // Commit and ensure we can see 99
-    list.commit(&view);
-    let edited_view = list.get_view();
-    let mut iter = view.iter(0, u128::MAX);
+    // Commit the edits
+    list.commit(&view_v1);
+
+    // Ensure we can see the edits
+    let view_v2 = list.get_view();
+    let mut iter = view_v2.iter(0, u128::MAX);
     for value in 0..inserted_count {
         assert_eq!(value as u128, iter.next().unwrap());
     }
-
-    // for item in list.get_view().iter(0, u128::MAX) {
-    //     assert_eq!(99, item);
-    // }
 }
