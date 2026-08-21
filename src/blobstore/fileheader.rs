@@ -54,7 +54,7 @@ impl FileHeader {
         }
     }
 
-    pub fn serialize(&self, backing_store : & mut dyn Write) {
+    pub fn serialize(&self, backing_store : &mut dyn Stream) {
         backing_store.write_all(&self.magic_number.to_le_bytes());
         backing_store.write_all(&self.file_format_version.to_le_bytes());
         backing_store.write_all(&self.header_size.to_le_bytes());
