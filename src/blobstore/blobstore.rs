@@ -16,14 +16,14 @@ TO DO
 */
 
 
-pub struct BlobStore <'a> {
-    backing_store_lock : Arc<Mutex<&'a mut dyn Stream>>
+pub struct BlobStore {
+    backing_store_lock : Box<dyn Stream>
 }
 
 
-impl <'a> BlobStore <'a>{
+impl BlobStore{
 
-    pub fn new (backing_store : & 'a mut dyn Stream) -> Self {
+    pub fn new (mut backing_store : Box<dyn Stream>) -> Self {
 
         // Figure out if we need to initialize a new blob store
         let file_length = backing_store.seek(SeekFrom::End(0)).unwrap();
@@ -32,18 +32,18 @@ impl <'a> BlobStore <'a>{
 
             // Write out a default file with just a header
             let file_header = FileHeader::default();
-            file_header.serialize(backing_store);
+            file_header.serialize(backing_store.as_mut());
 
             return BlobStore { 
-                backing_store_lock : Arc::new(Mutex::new(backing_store))
+                backing_store_lock : backing_store
             };
         }
         else {
             backing_store.seek(SeekFrom::Start(0));
-            let file_header = FileHeader::read(backing_store);
+            let file_header = FileHeader::read(backing_store.as_mut());
 
             BlobStore { 
-                backing_store_lock : Arc::new(Mutex::new(backing_store)),
+                backing_store_lock : backing_store,
            }
         }   
     }
@@ -54,11 +54,11 @@ impl <'a> BlobStore <'a>{
         // NYI look for free space to put the blob in
         // NYI take a lock when looking for free space
         
-        let mut backing_store = self.backing_store_lock.lock().unwrap();
+//        let mut backing_store = self.backing_store_lock.unwrap();
         
-        let position = backing_store.seek(SeekFrom::End(0)).unwrap();
-        backing_store.write_all(&contents.len().to_le_bytes());
-        backing_store.write_all(contents);
+        let position = self.backing_store_lock.seek(SeekFrom::End(0)).unwrap();
+        self.backing_store_lock.write_all(&contents.len().to_le_bytes());
+        self.backing_store_lock.write_all(contents);
 
         return BlobId::new(NonZeroU64::new(position).unwrap());
     }
@@ -66,11 +66,11 @@ impl <'a> BlobStore <'a>{
 
     pub fn get(& mut self, blobid: BlobId) -> Vec<u8> {
 
-        let mut backing_store = self.backing_store_lock.lock().unwrap();
+        //let mut backing_store = self.backing_store_lock.lock().unwrap();
 
-        backing_store.seek(SeekFrom::Start(blobid.value().into()));
-        let mut buffer : Vec<u8> = vec![0; backing_store.read_usize()];
-        backing_store.read(&mut buffer);
+        self.backing_store_lock.seek(SeekFrom::Start(blobid.value().into()));
+        let mut buffer : Vec<u8> = vec![0; self.backing_store_lock.read_usize()];
+        self.backing_store_lock.read(&mut buffer);
 
         buffer
     }
@@ -82,24 +82,24 @@ impl <'a> BlobStore <'a>{
 
 
     pub fn get_root_blobid(&mut self) -> BlobId {
-        let mut backing_store = self.backing_store_lock.lock().unwrap();
+        //let mut backing_store = self.backing_store_lock.lock().unwrap();
         
-        backing_store.seek(SeekFrom::Start(0));
-        let file_header = FileHeader::read(*backing_store);
+        self.backing_store_lock.seek(SeekFrom::Start(0));
+        let file_header = FileHeader::read(self.backing_store_lock.as_mut());
         
         file_header.root_blob_id
     }
 
 
     pub fn set_root_blobid(&mut self, blobid: BlobId) {
-        let mut backing_store = self.backing_store_lock.lock().unwrap();
+        let backing_store_mut = self.backing_store_lock.as_mut();
         
-        backing_store.seek(SeekFrom::Start(0));
-        let mut file_header = FileHeader::read(*backing_store);
+        backing_store_mut.seek(SeekFrom::Start(0));
+        let mut file_header = FileHeader::read(backing_store_mut);
         file_header.root_blob_id = blobid;
 
-        backing_store.seek(SeekFrom::Start(0));
-        file_header.serialize(*backing_store);
+        backing_store_mut.seek(SeekFrom::Start(0));
+        file_header.serialize(backing_store_mut);
     }
 }
 

@@ -9,16 +9,16 @@ use super::BPlusTree;
 
 #[test]
 fn create_empty() {
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
     let mut list = BPlusTree::<4>::new(&mut blobs);
 }
 
 
 #[test]
 fn enum_empty() {
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
     let mut list = BPlusTree::<4>::new(&mut blobs);
 
     let mut view = list.get_view();
@@ -31,8 +31,8 @@ fn enum_empty() {
 
 #[test]
 fn insert_one() {
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
     let list = BPlusTree::<4>::new(&mut blobs);
 
     // Insert 99 in a view (but don't commit it yet)
@@ -61,8 +61,8 @@ fn insert_one() {
 
 #[test]
 fn insert_several() {
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
     let list = BPlusTree::<4>::new(&mut blobs);
 
     let view = list.get_view();
@@ -90,8 +90,8 @@ fn insert_several() {
 #[test]
 fn insert_many_in_order() {
     const K:usize = 4;
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
     let mut list = BPlusTree::<K>::new(&mut blobs);
     let mut inserted_count = 0;
 

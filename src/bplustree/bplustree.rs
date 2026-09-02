@@ -11,13 +11,13 @@ use super::View;
 pub struct BPlusTree<'a, const K: usize> {
     root_id: BlobId,    // NYI change this to root: NodeLink<K>, perhaps in a mutex
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
-    backing_store: &'a mut BlobStore<'a>
+    backing_store: &'a mut BlobStore
 }
 
 
 impl <'a, const K: usize> BPlusTree<'a, K> {
 
-    pub fn new(backing_store: &'a mut BlobStore<'a>) -> Self {
+    pub fn new(backing_store: &'a mut BlobStore) -> Self {
 
         // Make a new, empty node for our root, store it, and add it to  our blobs map
         let root_node = Node::<K>::empty_leaf();
@@ -31,7 +31,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
     }
 
 
-    pub fn open(store: &mut BlobStore<'a>) -> Self {
+    pub fn open(store: &mut BlobStore) -> Self {
         panic!("NYI");
     }
 

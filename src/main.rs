@@ -22,8 +22,8 @@ fn main() {
         Ok(file) => file,
     };
 
-    let mut memory_buffer = MemoryStream::new();
-    let mut blobs = BlobStore::new(& mut memory_buffer);
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
 
     let blob_contents: [u8;_] = [1, 2, 3];
     let root_blob_id = blobs.put(&blob_contents);
