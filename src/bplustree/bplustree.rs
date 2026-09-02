@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use crate::BlobId;
 use crate::BlobStore;
 use super::node::*;
@@ -8,26 +9,30 @@ use super::nodelink::*;
 use super::View;
 
 
-pub struct BPlusTree<'a, const K: usize> {
+pub struct BPlusTree<const K: usize> {
     root_id: BlobId,    // NYI change this to root: NodeLink<K>, perhaps in a mutex
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
-    backing_store: &'a mut BlobStore
+    backing_store: Arc<Mutex<BlobStore>>
 }
 
 
-impl <'a, const K: usize> BPlusTree<'a, K> {
+impl<'a, const K: usize> BPlusTree<K> {
 
-    pub fn new(backing_store: &'a mut BlobStore) -> Self {
+    pub fn new(backing_store: Arc<Mutex<BlobStore>>) -> Self {
 
         // Make a new, empty node for our root, store it, and add it to  our blobs map
         let root_node = Node::<K>::empty_leaf();
-        let root_id = root_node.store(backing_store);
+        let root_id = root_node.store(backing_store.lock().as_mut().unwrap());
 
         // Start off with one node
         let mut nodes : HashMap<BlobId, NodeHandle<K>> = HashMap::new();
         nodes.insert(root_id, NodeHandle::new(root_node));
 
-        BPlusTree { root_id, loaded_hnodes: RefCell::new(nodes), backing_store }
+        BPlusTree { 
+            root_id,
+            loaded_hnodes: RefCell::new(nodes), 
+            backing_store: backing_store 
+        }
     }
 
 
@@ -81,7 +86,7 @@ impl <'a, const K: usize> BPlusTree<'a, K> {
 }
 
 
-impl<'a, const K:usize> NodeStore<K> for BPlusTree<'a, K> {
+impl<'a, const K:usize> NodeStore<K> for BPlusTree<K> {
 
     fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
         unimplemented!()

@@ -8,7 +8,7 @@ use super::nodelink::*;
 
 
 pub struct View<'a, const K: usize> {
-    based_on: &'a BPlusTree<'a, K>,
+    based_on: &'a BPlusTree<K>,
     root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
     pub(super) puts: RefCell<SortedArray<u128>>,
     pub(super) deletes: RefCell<SortedArray<u128>>
@@ -19,7 +19,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub fn new(based_on: &'a BPlusTree<'a, K>, root_node_link: NodeLink<K>) -> Self {
+    pub fn new(based_on: &'a BPlusTree<K>, root_node_link: NodeLink<K>) -> Self {
         View { 
             based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),
