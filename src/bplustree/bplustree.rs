@@ -83,12 +83,9 @@ impl<'a, const K: usize> BPlusTree<K> {
             None => NodeLink::unloaded(blobid) // NYI need to actually load the node
         }
     }
-}
 
 
-impl<'a, const K:usize> NodeStore<K> for BPlusTree<K> {
-
-    fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+    pub(crate) fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
         unimplemented!()
     }
 }

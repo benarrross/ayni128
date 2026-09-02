@@ -20,12 +20,6 @@ enum NodeLinkKind<const K: usize> {
 }
 
 
-/// Object that manages loading and saving as necessary.
-pub trait NodeStore<const K: usize> { 
-    fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K>;
-}
-
-
 #[derive(Debug)]
 pub struct NodeLink<const K:usize> {
     label: String,
@@ -80,7 +74,7 @@ impl<const K: usize> NodeLink<K> {
     }
 
     /// Gets a node handle from a link, loading the node from storage if necessary.
-    pub fn get_immutable(&self, node_store: &dyn NodeStore<K>) -> NodeHandle<K> {
+    pub fn get_immutable(&self, node_store: &BPlusTree<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 
@@ -105,7 +99,7 @@ impl<const K: usize> NodeLink<K> {
 
     /// Gets a mutable node handle from a link, loading the node from storage if necessary.
     /// This should ONLY be used by views when editing the tree.
-    pub fn get_mutable(&self, node_store: &dyn NodeStore<K>) -> NodeHandle<K> {
+    pub fn get_mutable(&self, node_store: &BPlusTree<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 
