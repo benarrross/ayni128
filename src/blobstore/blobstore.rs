@@ -17,7 +17,7 @@ TO DO
 
 
 pub struct BlobStore {
-    backing_store_lock : Box<dyn Stream>
+    backing_store : Box<dyn Stream>
 }
 
 
@@ -35,7 +35,7 @@ impl BlobStore{
             file_header.serialize(backing_store.as_mut());
 
             return BlobStore { 
-                backing_store_lock : backing_store
+                backing_store
             };
         }
         else {
@@ -43,7 +43,7 @@ impl BlobStore{
             let file_header = FileHeader::read(backing_store.as_mut());
 
             BlobStore { 
-                backing_store_lock : backing_store,
+                backing_store,
            }
         }   
     }
@@ -56,9 +56,9 @@ impl BlobStore{
         
 //        let mut backing_store = self.backing_store_lock.unwrap();
         
-        let position = self.backing_store_lock.seek(SeekFrom::End(0)).unwrap();
-        self.backing_store_lock.write_all(&contents.len().to_le_bytes());
-        self.backing_store_lock.write_all(contents);
+        let position = self.backing_store.seek(SeekFrom::End(0)).unwrap();
+        self.backing_store.write_all(&contents.len().to_le_bytes());
+        self.backing_store.write_all(contents);
 
         return BlobId::new(NonZeroU64::new(position).unwrap());
     }
@@ -68,9 +68,9 @@ impl BlobStore{
 
         //let mut backing_store = self.backing_store_lock.lock().unwrap();
 
-        self.backing_store_lock.seek(SeekFrom::Start(blobid.value().into()));
-        let mut buffer : Vec<u8> = vec![0; self.backing_store_lock.read_usize()];
-        self.backing_store_lock.read(&mut buffer);
+        self.backing_store.seek(SeekFrom::Start(blobid.value().into()));
+        let mut buffer : Vec<u8> = vec![0; self.backing_store.read_usize()];
+        self.backing_store.read(&mut buffer);
 
         buffer
     }
@@ -84,15 +84,15 @@ impl BlobStore{
     pub fn get_root_blobid(&mut self) -> BlobId {
         //let mut backing_store = self.backing_store_lock.lock().unwrap();
         
-        self.backing_store_lock.seek(SeekFrom::Start(0));
-        let file_header = FileHeader::read(self.backing_store_lock.as_mut());
+        self.backing_store.seek(SeekFrom::Start(0));
+        let file_header = FileHeader::read(self.backing_store.as_mut());
         
         file_header.root_blob_id
     }
 
 
     pub fn set_root_blobid(&mut self, blobid: BlobId) {
-        let backing_store_mut = self.backing_store_lock.as_mut();
+        let backing_store_mut = self.backing_store.as_mut();
         
         backing_store_mut.seek(SeekFrom::Start(0));
         let mut file_header = FileHeader::read(backing_store_mut);
