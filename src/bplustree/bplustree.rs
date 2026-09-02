@@ -10,7 +10,7 @@ use super::View;
 
 
 pub struct BPlusTree<const K: usize> {
-    root_id: BlobId,    // NYI change this to root: NodeLink<K>, perhaps in a mutex
+    root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>
 }
@@ -26,10 +26,11 @@ impl<'a, const K: usize> BPlusTree<K> {
 
         // Start off with one node
         let mut nodes : HashMap<BlobId, NodeHandle<K>> = HashMap::new();
-        nodes.insert(root_id, NodeHandle::new(root_node));
+        let root_node_handle = NodeHandle::new(root_node); 
+        nodes.insert(root_id, root_node_handle.clone());
 
         BPlusTree { 
-            root_id,
+            root_node_link: RefCell::new(NodeLink::<K>::immutable(&root_node_handle)),
             loaded_hnodes: RefCell::new(nodes), 
             backing_store: backing_store 
         }
@@ -42,30 +43,29 @@ impl<'a, const K: usize> BPlusTree<K> {
 
 
     pub fn get_view(&'a self) -> View<'a, K> {
-        View::new(self, self.create_link_to_loaded_node(self.root_id))
+        View::new(self, &*self.root_node_link.borrow())
     }
 
 
     pub fn commit(&self, view: &View<'a, K>) {
 
-        // NYI wrap this in a lock so only one instance can run at a time
-        // Perhaps put a mutex around root_id? Or is the write lock on root
-        // good enough?
-
-        // Get a write lock on our root node since we are going to modify it
-        let root_link = self.create_link_to_loaded_node(self.root_id);
-        let mutable_root_hnode = root_link.get_mutable(self);
+        // Get a write lock on our root node that will persist through the whole commit.
+        // This will ensure only one commit happens at a time.
+        let mutable_root_hnode = self.root_node_link.borrow().get_mutable(self);
         let root_node_write_lock = &mut mutable_root_hnode.write_lock();
 
         // Insert all new values into the committed b+tree
         let inserted_values = view.puts.borrow();
         for value in inserted_values.iter() {
+
             // NYI handle splits
             super::editor::insert_and_split(root_node_write_lock, *value, self);
 
-        // if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
-        //    *self.root_node_link.borrow_mut() = NodeLink::mutable(
-        //         create_branch_node(&mutable_root_hnode, right_hnode.clone()));
+        // if let SplitResult::Split(right_hnode) = super::editor::insert_and_split(
+        //     &mut mutable_root_hnode.write_lock(), *value, self) {
+        //         *self.root_node_link.borrow_mut() = NodeLink::mutable(
+        //             create_branch_node(&mutable_root_hnode, right_hnode.clone()));
+        //     }
         }
 
         // Remove all deleted values from the committed b+tree
@@ -74,14 +74,6 @@ impl<'a, const K: usize> BPlusTree<K> {
         // Write the edited nodes to storage
         // NYI
 
-    }
-
-
-    fn create_link_to_loaded_node(&self, blobid: BlobId) -> NodeLink<K> {
-        match self.loaded_hnodes.borrow().get(&blobid) {
-            Some(loaded_hnode) => NodeLink::immutable(loaded_hnode),
-            None => NodeLink::unloaded(blobid) // NYI need to actually load the node
-        }
     }
 
 

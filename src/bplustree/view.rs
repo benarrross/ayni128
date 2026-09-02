@@ -19,7 +19,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub fn new(based_on: &'a BPlusTree<K>, root_node_link: NodeLink<K>) -> Self {
+    pub fn new(based_on: &'a BPlusTree<K>, root_node_link: &NodeLink<K>) -> Self {
         View { 
             based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),
