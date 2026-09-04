@@ -32,7 +32,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets the next value greater than or equal to the specified value.
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.root_node_link.borrow().get_immutable(self.based_on);
+        let hnode = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
         self.get_from_node(&hnode.read_lock(), value)
     }
 
@@ -60,7 +60,7 @@ impl<'a, const K: usize> View<'a, K> {
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> ViewIterator<'a, K> {
-        let root_hnode = self.root_node_link.borrow().get_immutable(self.based_on);
+        let root_hnode = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
         ViewIterator::new(self, root_hnode, min, mac)
     }   
 
@@ -76,7 +76,7 @@ impl<'a, const K: usize> View<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable(self.based_on);
+        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable_hnode(self.based_on);
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone()));
@@ -87,7 +87,7 @@ impl<'a, const K: usize> View<'a, K> {
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        child_link.get_immutable(self.based_on)
+        child_link.get_immutable_hnode(self.based_on)
     }
 
 
@@ -100,23 +100,9 @@ impl<'a, const K: usize> View<'a, K> {
         if node.next_link.is_empty() {
             Option::None
         } else {
-            Option::Some(node.next_link.get_immutable(self.based_on))
+            Option::Some(node.next_link.get_immutable_hnode(self.based_on))
         }
     }
-}
-
-
-/// Creates a new branch node from the specified left and right nodes
-fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
-
-    // Make a new parent node that has the old node on its left and the new node on its right
-    let right_node = &*right_hnode.read_lock();
-    Node::new_branch(
-        SortedArray::from_values(vec![right_node.values[0]]),   // NYI This is wrong for branch nodes -- need a node.first_value() method
-        vec![
-            NodeLink::mutable(&left_hnode),
-            NodeLink::mutable(&right_hnode) 
-        ])
 }
 
 

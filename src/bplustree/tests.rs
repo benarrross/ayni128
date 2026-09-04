@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::blobstore::*;
 use super::BPlusTree;
+use super::View;
 
 
 #[test]
@@ -65,26 +66,38 @@ fn insert_several() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = BPlusTree::<4>::new(Arc::new(Mutex::new(blobs)));
+    let expected_values = vec![10, 32, 99, 999];
 
     let view = list.get_view();
-    view.put(99);
-    view.put(10);
-    view.put(32);
-    view.put(999);
+    for expected_value in &expected_values {
+        view.put(*expected_value);
+    }
 
-    let mut iter = view.iter(0, u128::MAX).into_iter();
-    assert_eq!(10_u128, iter.next().unwrap());
-    assert_eq!(32_u128, iter.next().unwrap());
-    assert_eq!(99_u128, iter.next().unwrap());
-    assert_eq!(999_u128, iter.next().unwrap());
-    assert!(iter.next().is_none());
+    assert_expected_values(&expected_values, &view);
+    let mut actual_iter = view.iter(0, u128::MAX).into_iter();
+    for expected_value in &expected_values {
+        assert_eq!(*expected_value, actual_iter.next().unwrap());
+    }
+    assert!(actual_iter.next().is_none());
+
 
     // Commit and ensure we can see 99
-    // list.commit(view);
-    // for item in list.get_view().iter(0, u128::MAX) {
-    //     assert_eq!(99, item);
-    // }
+    list.commit(&view);
+    let view2 = list.get_view();
+    assert_expected_values(&expected_values, &list.get_view());
+
+    // Ensure searching for the next value is sane for each
+    assert_eq!(10, view2.get(0));
+    assert_eq!(32, view2.get(11));
+    assert_eq!(99, view2.get(33));
+    assert_eq!(999, view2.get(100));
+
+    assert_eq!(10, view2.get(10));
+    assert_eq!(32, view2.get(32));
+    assert_eq!(99, view2.get(99));
+    assert_eq!(999, view2.get(999));
 }
+
 
 // NYI make another test for inserting non-contiguous nodes out-of-order,
 // and test getting the number before each one to ensure we are chasing values between leaf nodes correctly.
@@ -95,34 +108,43 @@ fn insert_many_in_order() {
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = BPlusTree::<4>::new(Arc::new(Mutex::new(blobs)));
     let mut inserted_count = 0;
+    let expected_values : Vec<u128> = (0..10).collect();
 
     let view_v0 = list.get_view();
 
     // Insert enough nodes that we need to do three splits
     let view_v1 = list.get_view();
-    for value in 0..K*20 {
-        view_v1.put(value as u128);
+    for value in &expected_values {
+        view_v1.put(*value as u128);
         inserted_count += 1;
 
         let mut iter = view_v1.iter(0, u128::MAX);
         for value in 0..inserted_count {
-            assert_eq!(value as u128, iter.next().unwrap());
+            assert_eq!(value, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
 
-        assert_eq!(value as u128, view_v1.get(value as u128));
+        assert_eq!(*value, view_v1.get(*value));
 
         assert_eq!(0, view_v0.iter(0, u128::MAX).count());
-        assert_eq!(u128::MAX, view_v0.get(value as u128));
+        assert_eq!(u128::MAX, view_v0.get(*value));
     }
 
     // Commit the edits
     list.commit(&view_v1);
 
     // Ensure we can see the edits
-    let view_v2 = list.get_view();
-    let mut iter = view_v2.iter(0, u128::MAX);
-    for value in 0..inserted_count {
-        assert_eq!(value as u128, iter.next().unwrap());
-    }
+    assert_expected_values(&expected_values, &list.get_view());
 }
+
+
+fn assert_expected_values<'a, const K: usize>(expected: &Vec<u128>, actual: &View<'a, K>) {
+
+    let mut actual_iter = actual.iter(0, u128::MAX).into_iter();
+    for expected_value in expected {
+        assert_eq!(*expected_value, actual_iter.next().unwrap());
+    }
+    assert!(actual_iter.next().is_none());
+
+}
+

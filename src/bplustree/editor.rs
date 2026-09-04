@@ -1,4 +1,5 @@
 use crate::bplustree::BPlusTree;
+use crate::sortedarray::*;
 use super::node::*;
 use super::nodehandle::*;
 use super::nodelink::*;
@@ -18,7 +19,7 @@ pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_sto
     else {
         // Find the child this should go in and ask the child to insert the value
         let index = node.values.find_range_index(value);
-        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable(node_store);
+        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable_hnode(node_store);
 
         // Handle the child splitting (which might force us to split the current node also)
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, node_store) {
@@ -64,3 +65,18 @@ fn split_branch_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
     let right_children = node.children.as_mut().unwrap().split_off(split_index);
     Node::new_branch(right_values, right_children)
 }
+
+
+/// Creates a new branch node from the specified left and right nodes
+pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
+
+    // Make a new parent node that has the old node on its left and the new node on its right
+    let right_node = &*right_hnode.read_lock();
+    Node::new_branch(
+        SortedArray::from_values(vec![right_node.values[0]]),   // NYI This is wrong for branch nodes -- need a node.first_value() method
+        vec![
+            NodeLink::mutable(&left_hnode),
+            NodeLink::mutable(&right_hnode) 
+        ])
+}
+

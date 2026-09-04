@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::BlobId;
 use crate::BlobStore;
+use crate::bplustree::editor::create_branch_node;
 use super::node::*;
 use super::nodehandle::*;
 use super::nodelink::*;
@@ -10,7 +11,7 @@ use super::View;
 
 
 pub struct BPlusTree<const K: usize> {
-    root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
+    root_node_link: Mutex<NodeLink<K>>,
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>
 }
@@ -30,7 +31,7 @@ impl<'a, const K: usize> BPlusTree<K> {
         nodes.insert(root_id, root_node_handle.clone());
 
         BPlusTree { 
-            root_node_link: RefCell::new(NodeLink::<K>::immutable(&root_node_handle)),
+            root_node_link: Mutex::new(NodeLink::<K>::immutable(&root_node_handle)),
             loaded_hnodes: RefCell::new(nodes), 
             backing_store: backing_store 
         }
@@ -43,7 +44,7 @@ impl<'a, const K: usize> BPlusTree<K> {
 
 
     pub fn get_view(&'a self) -> View<'a, K> {
-        View::new(self, &*self.root_node_link.borrow())
+        View::new(self, &*self.root_node_link.lock().unwrap())
     }
 
 
@@ -51,15 +52,20 @@ impl<'a, const K: usize> BPlusTree<K> {
 
         // Get a write lock on our root node that will persist through the whole commit.
         // This will ensure only one commit happens at a time.
-        let mutable_root_hnode = self.root_node_link.borrow().get_mutable(self);
-        let root_node_write_lock = &mut mutable_root_hnode.write_lock();
+        let root_node_write_lock = &mut self.root_node_link.lock().unwrap();
 
         // Insert all new values into the committed b+tree
         let inserted_values = view.puts.borrow();
         for value in inserted_values.iter() {
 
-            // NYI handle splits
-            super::editor::insert_and_split(root_node_write_lock, *value, self);
+            let mutable_root_hnode = root_node_write_lock.get_mutable_hnode(&self);
+            match super::editor::insert_and_split(&mut mutable_root_hnode.write_lock(), *value, self) {
+                SplitResult::Split(right_hnode) => {
+                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone());
+                    **root_node_write_lock = NodeLink::mutable(&branch_node);
+                },
+                SplitResult::NoSplit => {}
+            };
 
         // if let SplitResult::Split(right_hnode) = super::editor::insert_and_split(
         //     &mut mutable_root_hnode.write_lock(), *value, self) {
