@@ -3,10 +3,18 @@ use std::io::Cursor;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-
 use crate::blobstore::*;
 use super::BPlusTree;
 use super::View;
+
+/*
+TESTS TO ADD
+- Insert values out-of-order
+- view.get(n-1) on each to make sure we are chasing leaf nodes correctly for both get and enum (if separate code paths)
+- Insert at the beginning of a leaf node to ensure we are setting split values correctly up several levels
+- Concurrent transactions (make 2 or 3, edit them, then commit them after editing each one)
+- Make a really large list (10000 entries, K=16)
+*/
 
 
 #[test]
@@ -99,8 +107,6 @@ fn insert_several() {
 }
 
 
-// NYI make another test for inserting non-contiguous nodes out-of-order,
-// and test getting the number before each one to ensure we are chasing values between leaf nodes correctly.
 #[test]
 fn insert_many_in_order() {
     const K:usize = 4;
