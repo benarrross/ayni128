@@ -39,7 +39,7 @@ impl<'a, const K: usize> BPlusTree<K> {
 
 
     pub fn open(store: &mut BlobStore) -> Self {
-        panic!("NYI");
+        unimplemented!();
     }
 
 

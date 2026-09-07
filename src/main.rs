@@ -2,6 +2,7 @@
 mod blobstore;
 mod sortedarray;
 mod bplustree;
+mod graph;
 
 use std::fs::File;
 use std::io::Cursor;
