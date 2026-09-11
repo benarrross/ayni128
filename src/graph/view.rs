@@ -3,18 +3,17 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::BPlusTree;
 use super::graph::*;
-use super::attributebynodetable;
-use super::attributesbynametable;
+use super::attribute;
 use super::node;
 use super::node::*;
-use super::attributebynodetable::*;
-use super::attributesbynametable::*;
+use super::attribute::by_node::*;
+use super::attribute::by_name::*;
 use super::edge::{*, edge_from::*, edge_to::*};
 
 
 pub struct GraphView<'a> {
     based_on: &'a Graph,
-    nodes: crate::bplustree::View<'a, TREE_NODE_SIZE>,
+    nodes: crate::bplustree::View<'a, TREE_NODE_SIZE>,  // NYI make view wrapper classes
     edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     attributes_by_node: crate::bplustree::View<'a, TREE_NODE_SIZE>,
@@ -51,14 +50,14 @@ impl <'a> GraphView<'a> {
 
 
     pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
-        self.attributes_by_node.put(attributebynodetable::encode(&node, &name, &value));
-        self.attributes_by_name.put(attributesbynametable::encode(&name, &value, &node));
+        self.attributes_by_node.put(attribute::by_node::encode(&node, &name, &value));
+        self.attributes_by_name.put(attribute::by_name::encode(&name, &value, &node));
     }
 
 
     pub fn get_attribute(&self, node: NodeId, name: AttributeName) -> Option<StringId> {
-        let found_encoded = self.attributes_by_node.get(attributebynodetable::encode_any_value(&node, &name));
-        let attr = attributebynodetable::decode(&found_encoded);
+        let found_encoded = self.attributes_by_node.get(attribute::by_node::encode_any_value(&node, &name));
+        let attr = attribute::by_node::decode(&found_encoded);
         if (attr.node == node && attr.name == name) {
             Some(attr.value)
         } else {

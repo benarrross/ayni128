@@ -6,13 +6,14 @@ use crate::BlobId;
 use crate::BlobStore;
 use crate::BPlusTree;
 use crate::blobstore::*;
-use crate::graph::attributebynodetable::AttributeByNodeTable;
-use crate::graph::attributesbynametable::AttributeByNameTable;
+use crate::graph::attribute::by_node::AttributeByNodeTable;
+use crate::graph::attribute::by_name::AttributeByNameTable;
 use super::view::*;
 use super::node::NodesTable;
 
 
 pub static TREE_NODE_SIZE : usize = 512;
+
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NodeId (pub u32); // implement from trait instead of making this public?
