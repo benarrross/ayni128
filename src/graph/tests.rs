@@ -19,8 +19,8 @@ fn create_empty() {
 
     let view = graph.get_view();
 
-    let name_attribute : AttributeName = AttributeName { 0: 1 };
-    let name_value : StringId = StringId { 0: 2 };
+    let name_attribute : AttributeName = AttributeName { 0: 99 };
+    let name_value : StringId = StringId { 0: 100 };
 
     let n1 = view.create_node();
     view.set_attribute(n1, name_attribute, name_value);
