@@ -10,32 +10,46 @@ pub struct Edge {
 }
 
 
-pub struct EdgeFromIterator<'a> {
-    based_on_view: &'a GraphView<'a>,
+pub mod edge_from {
+
+    use super::Edge;
+    use crate::graph::view::*;
+
+
+    pub struct EdgeFromIterator<'a> {
+        based_on_view: &'a GraphView<'a>,
+    }
+
+
+    impl<'a> Iterator for EdgeFromIterator<'a> {
+
+        type Item = Edge;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            unimplemented!();
+        }   
+    }
+
 }
 
 
-impl<'a> Iterator for EdgeFromIterator<'a> {
+pub mod edge_to {
 
-    type Item = Edge;
+    use super::Edge;
+    use crate::graph::view::*;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!();
-    }   
+    pub struct EdgeToIterator<'a> {
+        based_on_view: &'a GraphView<'a>,
+    }
+
+
+    impl<'a> Iterator for EdgeToIterator<'a> {
+
+        type Item = Edge;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            unimplemented!();
+        }   
+    }
+
 }
-
-
-pub struct EdgeToIterator<'a> {
-    based_on_view: &'a GraphView<'a>,
-}
-
-
-impl<'a> Iterator for EdgeToIterator<'a> {
-
-    type Item = Edge;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!();
-    }   
-}
-

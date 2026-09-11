@@ -1,4 +1,6 @@
+use crate::BPlusTree;
 use super::graph::*;
+
 
 static NODE_BIT_INDEX : usize = 96;
 static NAME_BIT_INDEX : usize = 64;
@@ -7,6 +9,9 @@ static VALUE_BIT_INDEX : usize = 32;
 static NODE_MASK : u128 = 0xFFFFFFFF << NODE_BIT_INDEX;
 static NAME_MASK : u128 = 0xFFFFFFFF << NAME_BIT_INDEX;
 static VALUE_MASK : u128 = 0xFFFFFFFF << VALUE_BIT_INDEX;
+
+
+pub struct AttributeByNodeTable (pub BPlusTree<TREE_NODE_SIZE>); // NYI make this private
 
 
 pub struct Attribute {

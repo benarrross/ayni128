@@ -1,4 +1,8 @@
-use super::graph::NodeId;
+use crate::BPlusTree;
+use super::graph::*;
+
+
+pub struct NodesTable (pub BPlusTree<TREE_NODE_SIZE>); // NYI make this private
 
 
 pub fn encode(node: &NodeId) -> u128 {

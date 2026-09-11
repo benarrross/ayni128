@@ -21,7 +21,7 @@ pub struct BlobStore {
 }
 
 
-impl BlobStore{
+impl BlobStore {
 
     pub fn new (mut backing_store : Box<dyn Stream>) -> Self {
 

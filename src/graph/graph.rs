@@ -5,7 +5,12 @@ use std::sync::atomic::*;
 use crate::BlobId;
 use crate::BlobStore;
 use crate::BPlusTree;
+use crate::blobstore::*;
+use crate::graph::attributebynodetable::AttributeByNodeTable;
+use crate::graph::attributesbynametable::AttributeByNameTable;
 use super::view::*;
+use super::node::NodesTable;
+
 
 pub static TREE_NODE_SIZE : usize = 512;
 
@@ -34,11 +39,11 @@ pub enum EdgeType {
 
 pub struct Graph {
     blobs: Arc<Mutex<BlobStore>>,
-    nodes: BPlusTree<TREE_NODE_SIZE>,
+    nodes: NodesTable,
     edges_from: BPlusTree<TREE_NODE_SIZE>,
     edges_to: BPlusTree<TREE_NODE_SIZE>,
-    attributes_by_node: BPlusTree<TREE_NODE_SIZE>,
-    attributes_by_name: BPlusTree<TREE_NODE_SIZE>,
+    attributes_by_node: AttributeByNodeTable,
+    attributes_by_name: AttributeByNameTable,
     // NYI bloom filters table
     // NYI strings table
     next_node_id: AtomicU32
@@ -46,16 +51,16 @@ pub struct Graph {
 
 
 impl Graph {
-    pub fn new(mut backing_store: Box<dyn crate::blobstore::Stream>) -> Self {
+    pub fn new(mut backing_store: Box<dyn Stream>) -> Self {
 
         let blobstore = Arc::new(Mutex::new(BlobStore::new(backing_store)));
         Graph {
             blobs: blobstore.clone(),
-            nodes: BPlusTree::new(blobstore.clone()),
+            nodes: NodesTable { 0: BPlusTree::new(blobstore.clone()) },
             edges_from: BPlusTree::new(blobstore.clone()),
             edges_to: BPlusTree::new(blobstore.clone()),
-            attributes_by_node: BPlusTree::new(blobstore.clone()),
-            attributes_by_name: BPlusTree::new(blobstore.clone()),
+            attributes_by_node: AttributeByNodeTable { 0: BPlusTree::new(blobstore.clone()) },
+            attributes_by_name: AttributeByNameTable { 0: BPlusTree::new(blobstore.clone()) },
             next_node_id: AtomicU32::new(1),
         }
     }
@@ -67,7 +72,14 @@ impl Graph {
 
 
     pub fn get_view<'a>(&'a self) -> GraphView<'a> {
-        unimplemented!();
+        // NYI lock something so this only happens one at a time
+        GraphView::new(
+            &self,
+            &self.nodes,
+            &self.edges_from,
+            &self.edges_to,
+            &self.attributes_by_node,
+            &self.attributes_by_name)
     }
 
 

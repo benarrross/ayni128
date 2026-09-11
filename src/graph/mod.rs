@@ -3,4 +3,6 @@ mod view;
 mod edge;
 mod attributesbynametable;
 mod attributebynodetable;
-mod nodestable;
+mod node;
+
+mod tests;

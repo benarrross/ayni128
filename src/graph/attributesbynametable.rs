@@ -1,5 +1,10 @@
+use crate::BPlusTree;
 use super::graph::*;
 use super::attributebynodetable::Attribute;
+
+
+pub struct AttributeByNameTable (pub BPlusTree<TREE_NODE_SIZE>); // NYI make this private
+
 
 
 static NODE_BIT_INDEX : usize = 32;
