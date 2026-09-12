@@ -6,8 +6,8 @@ use crate::BlobId;
 use crate::BlobStore;
 use crate::BPlusTree;
 use crate::blobstore::*;
-use crate::graph::attribute::by_node::AttributeByNodeTable;
-use crate::graph::attribute::by_name::AttributeByNameTable;
+use crate::graph::attribute::by_node::AttributesByNodeTable;
+use crate::graph::attribute::by_name::AttributesByNameTable;
 use super::view::*;
 use super::node::NodesTable;
 
@@ -43,8 +43,8 @@ pub struct Graph {
     nodes: NodesTable,
     edges_from: BPlusTree<TREE_NODE_SIZE>,
     edges_to: BPlusTree<TREE_NODE_SIZE>,
-    attributes_by_node: AttributeByNodeTable,
-    attributes_by_name: AttributeByNameTable,
+    attributes_by_node: AttributesByNodeTable,
+    attributes_by_name: AttributesByNameTable,
     // NYI bloom filters table
     // NYI strings table
     next_node_id: AtomicU32
@@ -60,8 +60,8 @@ impl Graph {
             nodes: NodesTable::new(BPlusTree::new(blobstore.clone())),
             edges_from: BPlusTree::new(blobstore.clone()),
             edges_to: BPlusTree::new(blobstore.clone()),
-            attributes_by_node: AttributeByNodeTable::new(BPlusTree::new(blobstore.clone())),
-            attributes_by_name: AttributeByNameTable::new(BPlusTree::new(blobstore.clone())),
+            attributes_by_node: AttributesByNodeTable::new(BPlusTree::new(blobstore.clone())),
+            attributes_by_name: AttributesByNameTable::new(BPlusTree::new(blobstore.clone())),
             next_node_id: AtomicU32::new(1),
         }
     }

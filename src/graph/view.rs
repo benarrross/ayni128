@@ -16,8 +16,8 @@ pub struct GraphView<'a> {
     nodes: NodesView<'a>,
     edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
-    attributes_by_node: AttributeByNodeView<'a>,
-    attributes_by_name: AttributeByNameView<'a>,
+    attributes_by_node: AttributesByNodeView<'a>,
+    attributes_by_name: AttributesByNameView<'a>,
 }
 
 
@@ -28,8 +28,8 @@ impl <'a> GraphView<'a> {
         nodes_table: &'a NodesTable,
         edges_from_table: &'a BPlusTree<TREE_NODE_SIZE>,
         edges_to_table: &'a BPlusTree<TREE_NODE_SIZE>,
-        attributes_by_node_table: &'a AttributeByNodeTable,
-        attributes_by_name_table: &'a AttributeByNameTable) -> Self {
+        attributes_by_node_table: &'a AttributesByNodeTable,
+        attributes_by_name_table: &'a AttributesByNameTable) -> Self {
         
         GraphView { 
             based_on: based_on,

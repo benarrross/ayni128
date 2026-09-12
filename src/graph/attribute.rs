@@ -24,33 +24,33 @@ pub mod by_node {
     static VALUE_MASK : u128 = 0xFFFFFFFF << VALUE_BIT_INDEX;
 
 
-    pub struct AttributeByNodeTable {
+    pub struct AttributesByNodeTable {
         inner_table: BPlusTree<TREE_NODE_SIZE>
     } 
 
 
-    impl<'a> AttributeByNodeTable {
+    impl<'a> AttributesByNodeTable {
 
         pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
-            AttributeByNodeTable {
+            AttributesByNodeTable {
                 inner_table: table
             }
         }
 
-        pub fn get_view(&'a self) -> AttributeByNodeView<'a> {
-            AttributeByNodeView::new(self.inner_table.get_view())
+        pub fn get_view(&'a self) -> AttributesByNodeView<'a> {
+            AttributesByNodeView::new(self.inner_table.get_view())
         }
     }
 
 
-    pub struct AttributeByNodeView<'a> {
+    pub struct AttributesByNodeView<'a> {
         inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
     }
 
 
-    impl<'a> AttributeByNodeView<'a> {
+    impl<'a> AttributesByNodeView<'a> {
         pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
-            AttributeByNodeView {
+            AttributesByNodeView {
                 inner_view: view
             }
         }
@@ -106,33 +106,33 @@ pub mod by_name {
     static NODE_MASK : u128 = 0xFFFFFFFF << NODE_BIT_INDEX;
 
 
-    pub struct AttributeByNameTable {
+    pub struct AttributesByNameTable {
         inner_table: BPlusTree<TREE_NODE_SIZE>
     } 
 
 
-    impl<'a> AttributeByNameTable {
+    impl<'a> AttributesByNameTable {
 
         pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
-            AttributeByNameTable {
+            AttributesByNameTable {
                 inner_table: table
             }
         }
 
-        pub fn get_view(&'a self) -> AttributeByNameView<'a> {
-            AttributeByNameView::new(self.inner_table.get_view())
+        pub fn get_view(&'a self) -> AttributesByNameView<'a> {
+            AttributesByNameView::new(self.inner_table.get_view())
         }
     }
 
 
-    pub struct AttributeByNameView<'a> {
+    pub struct AttributesByNameView<'a> {
         inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
     }
 
     
-    impl<'a> AttributeByNameView<'a> {
+    impl<'a> AttributesByNameView<'a> {
         pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
-            AttributeByNameView {
+            AttributesByNameView {
                 inner_view: view
             }
         }
