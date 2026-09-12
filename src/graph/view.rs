@@ -64,12 +64,12 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn iter_attributes(&self, node: NodeId) -> AttrByNodeIterator<'a> {
+    pub fn iter_attributes(&self, node: NodeId) -> AttributeByNodeIterator<'a> {
         unimplemented!();
     }
 
 
-    pub fn iter_nodes_with_attribute(&self, name: AttributeName, value: StringId) -> AttrByNameValueIterator<'a> {
+    pub fn iter_nodes_with_attribute(&self, name: AttributeName, value: StringId) -> AttributeByNameValueIterator<'a> {
         unimplemented!();
     }
 

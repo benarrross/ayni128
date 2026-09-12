@@ -90,12 +90,12 @@ pub mod by_node {
     }
 
 
-    pub struct AttrByNodeIterator<'a> {
+    pub struct AttributeByNodeIterator<'a> {
         based_on_view: &'a GraphView<'a>,
     }
 
 
-    impl<'a> Iterator for AttrByNodeIterator<'a> {
+    impl<'a> Iterator for AttributeByNodeIterator<'a> {
 
         type Item = NodeId;
 
@@ -181,12 +181,12 @@ pub mod by_name {
     }
 
 
-    pub struct AttrByNameValueIterator<'a> {
+    pub struct AttributeByNameValueIterator<'a> {
         based_on_view: &'a GraphView<'a>,
     }
 
 
-    impl<'a> Iterator for AttrByNameValueIterator<'a> {
+    impl<'a> Iterator for AttributeByNameValueIterator<'a> {
 
         type Item = StringId;
 
