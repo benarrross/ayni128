@@ -21,7 +21,6 @@ impl<'a> NodesTable {
 }
 
 
-
 pub struct NodesView<'a> {
     pub inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
 }

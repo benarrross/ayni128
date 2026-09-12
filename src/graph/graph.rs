@@ -6,8 +6,10 @@ use crate::BlobId;
 use crate::BlobStore;
 use crate::BPlusTree;
 use crate::blobstore::*;
-use crate::graph::attribute::by_node::AttributesByNodeTable;
-use crate::graph::attribute::by_name::AttributesByNameTable;
+use crate::graph::attribute::by_node::*;
+use crate::graph::attribute::by_name::*;
+use crate::graph::edge::edge_from::*;
+use crate::graph::edge::edge_to::*;
 use super::view::*;
 use super::node::NodesTable;
 
@@ -41,8 +43,8 @@ pub enum EdgeType {
 pub struct Graph {
     blobs: Arc<Mutex<BlobStore>>,
     nodes: NodesTable,
-    edges_from: BPlusTree<TREE_NODE_SIZE>,
-    edges_to: BPlusTree<TREE_NODE_SIZE>,
+    edges_from: EdgesFromTable,
+    edges_to: EdgesToTable,
     attributes_by_node: AttributesByNodeTable,
     attributes_by_name: AttributesByNameTable,
     // NYI bloom filters table
@@ -58,8 +60,8 @@ impl Graph {
         Graph {
             blobs: blobstore.clone(),
             nodes: NodesTable::new(BPlusTree::new(blobstore.clone())),
-            edges_from: BPlusTree::new(blobstore.clone()),
-            edges_to: BPlusTree::new(blobstore.clone()),
+            edges_from: EdgesFromTable::new(BPlusTree::new(blobstore.clone())),
+            edges_to: EdgesToTable::new(BPlusTree::new(blobstore.clone())),
             attributes_by_node: AttributesByNodeTable::new(BPlusTree::new(blobstore.clone())),
             attributes_by_name: AttributesByNameTable::new(BPlusTree::new(blobstore.clone())),
             next_node_id: AtomicU32::new(1),
@@ -77,8 +79,8 @@ impl Graph {
         GraphView::new(
             &self,
             &self.nodes,
-            &self.edges_from,
-            &self.edges_to,
+            &self.edges_from.inner_table,
+            &self.edges_to.inner_table,
             &self.attributes_by_node,
             &self.attributes_by_name)
     }
