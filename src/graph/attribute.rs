@@ -147,14 +147,14 @@ pub mod by_name {
         // }
         
 
-        pub fn encode(name: &AttributeName, value: &StringId, node: &NodeId) -> u128 {
+        fn encode(name: &AttributeName, value: &StringId, node: &NodeId) -> u128 {
             (name.0 as u128) << NAME_BIT_INDEX |
             (value.0 as u128) << VALUE_BIT_INDEX |
             (node.0 as u128) << NODE_BIT_INDEX
         }
 
 
-        pub fn decode(encoded: &u128) -> Attribute {
+        fn decode(encoded: &u128) -> Attribute {
             Attribute {
                 node: NodeId(((*encoded & NODE_MASK) >> NODE_BIT_INDEX) as u32),
                 name: AttributeName(((*encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32),

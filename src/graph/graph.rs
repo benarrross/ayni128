@@ -57,7 +57,7 @@ impl Graph {
         let blobstore = Arc::new(Mutex::new(BlobStore::new(backing_store)));
         Graph {
             blobs: blobstore.clone(),
-            nodes: NodesTable { 0: BPlusTree::new(blobstore.clone()) },
+            nodes: NodesTable::new(BPlusTree::new(blobstore.clone())),
             edges_from: BPlusTree::new(blobstore.clone()),
             edges_to: BPlusTree::new(blobstore.clone()),
             attributes_by_node: AttributeByNodeTable::new(BPlusTree::new(blobstore.clone())),

@@ -13,7 +13,7 @@ use super::edge::{*, edge_from::*, edge_to::*};
 
 pub struct GraphView<'a> {
     based_on: &'a Graph,
-    nodes: crate::bplustree::View<'a, TREE_NODE_SIZE>,  // NYI make view wrapper classes
+    nodes: NodesView<'a>,
     edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     attributes_by_node: AttributeByNodeView<'a>,
@@ -33,7 +33,7 @@ impl <'a> GraphView<'a> {
         
         GraphView { 
             based_on: based_on,
-            nodes: nodes_table.0.get_view(),
+            nodes: nodes_table.get_view(),
             edges_from: edges_from_table.get_view(),
             edges_to: edges_to_table.get_view(),
             attributes_by_node: attributes_by_node_table.get_view(),
@@ -44,7 +44,7 @@ impl <'a> GraphView<'a> {
     
     pub fn create_node(&self) -> NodeId {
         let node = self.based_on.get_next_node_id();
-        self.nodes.put(node::encode(&node));
+        self.nodes.put(&node);
         node
     }
 
