@@ -17,7 +17,7 @@ pub struct GraphView<'a> {
     edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     attributes_by_node: AttributeByNodeView<'a>,
-    attributes_by_name: crate::bplustree::View<'a, TREE_NODE_SIZE>,
+    attributes_by_name: AttributeByNameView<'a>,
 }
 
 
@@ -37,7 +37,7 @@ impl <'a> GraphView<'a> {
             edges_from: edges_from_table.get_view(),
             edges_to: edges_to_table.get_view(),
             attributes_by_node: attributes_by_node_table.get_view(),
-            attributes_by_name: attributes_by_name_table.0.get_view()
+            attributes_by_name: attributes_by_name_table.get_view()
         }
     }
 
@@ -51,7 +51,7 @@ impl <'a> GraphView<'a> {
 
     pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
         self.attributes_by_node.put(&node, &name, &value);
-        self.attributes_by_name.put(attribute::by_name::encode(&name, &value, &node));
+        self.attributes_by_name.put(&name, &value, &node);
     }
 
 
@@ -97,6 +97,7 @@ impl <'a> GraphView<'a> {
 }
 
 
+// NYI move into attribute.rs
 pub struct AttrByNameValueIterator<'a> {
     based_on_view: &'a GraphView<'a>,
 }
@@ -112,6 +113,7 @@ impl<'a> Iterator for AttrByNameValueIterator<'a> {
 }
 
 
+// NYI move into attribute.rs
 pub struct AttrByNodeIterator<'a> {
     based_on_view: &'a GraphView<'a>,
 }

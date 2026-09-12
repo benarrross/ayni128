@@ -61,7 +61,7 @@ impl Graph {
             edges_from: BPlusTree::new(blobstore.clone()),
             edges_to: BPlusTree::new(blobstore.clone()),
             attributes_by_node: AttributeByNodeTable::new(BPlusTree::new(blobstore.clone())),
-            attributes_by_name: AttributeByNameTable { 0: BPlusTree::new(blobstore.clone()) },
+            attributes_by_name: AttributeByNameTable::new(BPlusTree::new(blobstore.clone())),
             next_node_id: AtomicU32::new(1),
         }
     }
