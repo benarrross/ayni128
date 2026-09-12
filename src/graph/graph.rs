@@ -79,8 +79,8 @@ impl Graph {
         GraphView::new(
             &self,
             &self.nodes,
-            &self.edges_from.inner_table,
-            &self.edges_to.inner_table,
+            &self.edges_from,
+            &self.edges_to,
             &self.attributes_by_node,
             &self.attributes_by_name)
     }

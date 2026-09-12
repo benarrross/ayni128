@@ -6,16 +6,15 @@ use super::graph::*;
 use super::attribute;
 use super::node;
 use super::node::*;
-use super::attribute::by_node::*;
-use super::attribute::by_name::*;
+use super::attribute::{by_node::*, by_name::*};
 use super::edge::{*, edge_from::*, edge_to::*};
 
 
 pub struct GraphView<'a> {
     based_on: &'a Graph,
     nodes: NodesView<'a>,
-    edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
-    edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
+    edges_from: EdgesFromView<'a>,
+    edges_to: EdgesToView<'a>,
     attributes_by_node: AttributesByNodeView<'a>,
     attributes_by_name: AttributesByNameView<'a>,
 }
@@ -26,8 +25,8 @@ impl <'a> GraphView<'a> {
     pub(crate) fn new(
         based_on: &'a Graph, 
         nodes_table: &'a NodesTable,
-        edges_from_table: &'a BPlusTree<TREE_NODE_SIZE>,
-        edges_to_table: &'a BPlusTree<TREE_NODE_SIZE>,
+        edges_from_table: &'a EdgesFromTable,
+        edges_to_table: &'a EdgesToTable,
         attributes_by_node_table: &'a AttributesByNodeTable,
         attributes_by_name_table: &'a AttributesByNameTable) -> Self {
         

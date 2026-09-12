@@ -20,7 +20,7 @@ pub mod edge_from {
 
 
     pub struct EdgesFromTable {
-        pub inner_table: BPlusTree<TREE_NODE_SIZE>
+        inner_table: BPlusTree<TREE_NODE_SIZE>
     } 
 
 
@@ -32,12 +32,26 @@ pub mod edge_from {
             }
         }
 
-        // pub fn get_view(&'a self) -> NodesView<'a> {
-        //     NodesView::new(self.inner_table.get_view())
-        // }
+        pub fn get_view(&'a self) -> EdgesFromView<'a> {
+            EdgesFromView::new(self.inner_table.get_view())
+        }
     }
 
     
+    pub struct EdgesFromView<'a> {
+        inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+    }
+
+
+    impl<'a> EdgesFromView<'a> {
+        pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+            EdgesFromView {
+                inner_view: view
+            }
+        }
+    }
+
+
     pub struct EdgeFromIterator<'a> {
         based_on_view: &'a GraphView<'a>,
     }
@@ -51,7 +65,6 @@ pub mod edge_from {
             unimplemented!();
         }   
     }
-
 }
 
 
@@ -64,7 +77,7 @@ pub mod edge_to {
 
 
     pub struct EdgesToTable {
-        pub inner_table: BPlusTree<TREE_NODE_SIZE>
+        inner_table: BPlusTree<TREE_NODE_SIZE>
     } 
 
 
@@ -76,11 +89,26 @@ pub mod edge_to {
             }
         }
 
-        // pub fn get_view(&'a self) -> NodesView<'a> {
-        //     NodesView::new(self.inner_table.get_view())
-        // }
+        pub fn get_view(&'a self) -> EdgesToView<'a> {
+            EdgesToView::new(self.inner_table.get_view())
+        }
     }
     
+
+    pub struct EdgesToView<'a> {
+        inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+    }
+
+
+    impl<'a> EdgesToView<'a> {
+        pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+            EdgesToView {
+                inner_view: view
+            }
+        }
+    }
+
+
     pub struct EdgeToIterator<'a> {
         based_on_view: &'a GraphView<'a>,
     }
@@ -94,5 +122,4 @@ pub mod edge_to {
             unimplemented!();
         }   
     }
-
 }
