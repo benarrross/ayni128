@@ -16,7 +16,7 @@ pub struct GraphView<'a> {
     nodes: crate::bplustree::View<'a, TREE_NODE_SIZE>,  // NYI make view wrapper classes
     edges_from: crate::bplustree::View<'a, TREE_NODE_SIZE>,
     edges_to: crate::bplustree::View<'a, TREE_NODE_SIZE>,
-    attributes_by_node: crate::bplustree::View<'a, TREE_NODE_SIZE>,
+    attributes_by_node: AttributeByNodeView<'a>,
     attributes_by_name: crate::bplustree::View<'a, TREE_NODE_SIZE>,
 }
 
@@ -36,7 +36,7 @@ impl <'a> GraphView<'a> {
             nodes: nodes_table.0.get_view(),
             edges_from: edges_from_table.get_view(),
             edges_to: edges_to_table.get_view(),
-            attributes_by_node: attributes_by_node_table.0.get_view(),
+            attributes_by_node: attributes_by_node_table.get_view(),
             attributes_by_name: attributes_by_name_table.0.get_view()
         }
     }
@@ -50,14 +50,13 @@ impl <'a> GraphView<'a> {
 
 
     pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
-        self.attributes_by_node.put(attribute::by_node::encode(&node, &name, &value));
+        self.attributes_by_node.put(&node, &name, &value);
         self.attributes_by_name.put(attribute::by_name::encode(&name, &value, &node));
     }
 
 
     pub fn get_attribute(&self, node: NodeId, name: AttributeName) -> Option<StringId> {
-        let found_encoded = self.attributes_by_node.get(attribute::by_node::encode_any_value(&node, &name));
-        let attr = attribute::by_node::decode(&found_encoded);
+        let attr = self.attributes_by_node.get(&node, &name);
         if (attr.node == node && attr.name == name) {
             Some(attr.value)
         } else {
