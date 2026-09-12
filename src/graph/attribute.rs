@@ -13,6 +13,7 @@ pub mod by_node {
 
     use crate::BPlusTree;
     use crate::graph::graph::*;
+    use crate::graph::view::*;
     use super::*;
 
     static NODE_BIT_INDEX : usize = 96;
@@ -86,8 +87,23 @@ pub mod by_node {
                 value: StringId(((*encoded & VALUE_MASK) >> VALUE_BIT_INDEX) as u32),
             }
         }
-
     }
+
+
+    pub struct AttrByNodeIterator<'a> {
+        based_on_view: &'a GraphView<'a>,
+    }
+
+
+    impl<'a> Iterator for AttrByNodeIterator<'a> {
+
+        type Item = NodeId;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            unimplemented!();
+        }   
+    }
+
 }
 
 
@@ -95,6 +111,7 @@ pub mod by_name {
 
     use crate::BPlusTree;
     use crate::graph::graph::*;
+    use crate::graph::view::*;
     use super::*;
     
     static NODE_BIT_INDEX : usize = 32;
@@ -162,5 +179,22 @@ pub mod by_name {
             }
         }
     }
+
+
+    pub struct AttrByNameValueIterator<'a> {
+        based_on_view: &'a GraphView<'a>,
+    }
+
+
+    impl<'a> Iterator for AttrByNameValueIterator<'a> {
+
+        type Item = StringId;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            unimplemented!();
+        }   
+    }
+
+    
 }
 

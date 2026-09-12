@@ -92,38 +92,4 @@ impl <'a> GraphView<'a> {
     pub fn iter_edges_to(&self, node: NodeId, name: EdgeName) -> EdgeToIterator<'a> {
         unimplemented!();
     }
-
 }
-
-
-// NYI move into attribute.rs
-pub struct AttrByNameValueIterator<'a> {
-    based_on_view: &'a GraphView<'a>,
-}
-
-
-impl<'a> Iterator for AttrByNameValueIterator<'a> {
-
-    type Item = StringId;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!();
-    }   
-}
-
-
-// NYI move into attribute.rs
-pub struct AttrByNodeIterator<'a> {
-    based_on_view: &'a GraphView<'a>,
-}
-
-
-impl<'a> Iterator for AttrByNodeIterator<'a> {
-
-    type Item = NodeId;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!();
-    }   
-}
-
