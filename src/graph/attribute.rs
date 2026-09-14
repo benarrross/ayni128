@@ -1,4 +1,4 @@
-use crate::BPlusTree;
+use crate::PersistedSortedList;
 use super::graph::*;
 
 
@@ -11,7 +11,7 @@ pub struct Attribute {
 
 pub mod by_node {
 
-    use crate::BPlusTree;
+    use crate::PersistedSortedList;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
@@ -26,19 +26,20 @@ pub mod by_node {
 
 
     pub struct AttributesByNodeTable {
-        inner_table: BPlusTree<TREE_NODE_SIZE>
+        inner_table: PersistedSortedList<TREE_NODE_SIZE>
     } 
 
 
     impl<'a> AttributesByNodeTable {
 
-        pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
             AttributesByNodeTable {
                 inner_table: table
             }
         }
 
         pub fn get_view(&'a self) -> AttributesByNodeView<'a> {
+            
             AttributesByNodeView::new(self.inner_table.get_view())
         }
     }
@@ -109,7 +110,7 @@ pub mod by_node {
 
 pub mod by_name {
 
-    use crate::BPlusTree;
+    use crate::PersistedSortedList;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
@@ -124,13 +125,13 @@ pub mod by_name {
 
 
     pub struct AttributesByNameTable {
-        inner_table: BPlusTree<TREE_NODE_SIZE>
+        inner_table: PersistedSortedList<TREE_NODE_SIZE>
     } 
 
 
     impl<'a> AttributesByNameTable {
 
-        pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
             AttributesByNameTable {
                 inner_table: table
             }

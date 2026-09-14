@@ -1,4 +1,4 @@
-use crate::BPlusTree;
+use crate::PersistedSortedList;
 use super::graph::*;
 use xxhash_rust::const_xxh3::xxh3_64 as const_xxh3;
 use xxhash_rust::xxh3::xxh3_64;
@@ -20,13 +20,13 @@ when the set happens. Then I also need a table that maps from StringId to blob o
 */
 
 pub struct StringsTable {
-    inner_table: BPlusTree<TREE_NODE_SIZE>
+    inner_table: PersistedSortedList<TREE_NODE_SIZE>
 } 
 
 
 impl<'a> StringsTable {
 
-    pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
+    pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
         StringsTable {
             inner_table: table
         }

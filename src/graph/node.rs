@@ -1,15 +1,15 @@
-use crate::BPlusTree;
+use crate::PersistedSortedList;
 use super::graph::*;
 
 
 pub struct NodesTable {
-    inner_table: BPlusTree<TREE_NODE_SIZE>
+    inner_table: PersistedSortedList<TREE_NODE_SIZE>
 } 
 
 
 impl<'a> NodesTable {
 
-    pub fn new(table: BPlusTree<TREE_NODE_SIZE>) -> Self {
+    pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
         NodesTable {
             inner_table: table
         }
