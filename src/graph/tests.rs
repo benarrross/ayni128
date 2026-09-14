@@ -11,9 +11,8 @@ use super::view::*;
 use super::graph::*;
 
 
-
 #[test]
-fn create_empty() {
+fn create_one_node_and_attribute() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut graph = Graph::new(memory_buffer);
 
