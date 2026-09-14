@@ -22,12 +22,12 @@ impl<'a> NodesTable {
 
 
 pub struct NodesView<'a> {
-    pub inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+    pub inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
 }
 
 
 impl<'a> NodesView<'a> {
-    pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+    pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
         NodesView {
             inner_view: view
         }

@@ -46,12 +46,12 @@ pub mod by_node {
 
 
     pub struct AttributesByNodeView<'a> {
-        inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
     }
 
 
     impl<'a> AttributesByNodeView<'a> {
-        pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
             AttributesByNodeView {
                 inner_view: view
             }
@@ -144,12 +144,12 @@ pub mod by_name {
 
 
     pub struct AttributesByNameView<'a> {
-        inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
     }
 
     
     impl<'a> AttributesByNameView<'a> {
-        pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
             AttributesByNameView {
                 inner_view: view
             }

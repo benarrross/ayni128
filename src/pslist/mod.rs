@@ -1,11 +1,11 @@
-mod bplustree;
+mod persistentsortedlist;
 mod editor;
 mod node;
 mod nodehandle;
 mod nodelink;
 mod view;
 
-pub use bplustree::*;
+pub use persistentsortedlist::*;
 pub use view::View;
 
 mod tests;

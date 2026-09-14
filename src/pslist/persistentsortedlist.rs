@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::BlobId;
 use crate::BlobStore;
-use crate::bplustree::editor::create_branch_node;
+use crate::pslist::editor::create_branch_node;
 use super::node::*;
 use super::nodehandle::*;
 use super::nodelink::*;

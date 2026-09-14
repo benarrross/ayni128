@@ -1,7 +1,7 @@
 #![allow(unused)]
 mod blobstore;
 mod sortedarray;
-mod bplustree;
+mod pslist;
 mod graph;
 
 use std::fs::File;
@@ -9,7 +9,7 @@ use std::io::Cursor;
 use std::io::BufWriter;
 use std::path::Path;
 use blobstore::*;
-use bplustree::*;
+use pslist::*;
 
 
 fn main() {

@@ -39,12 +39,12 @@ impl<'a> StringsTable {
 
 
 pub struct StringsView<'a> {
-    pub inner_view: crate::bplustree::View<'a, TREE_NODE_SIZE>
+    pub inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
 }
 
 
 impl<'a> StringsView<'a> {
-    pub fn new(view: crate::bplustree::View<'a, TREE_NODE_SIZE>) -> Self {
+    pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
         StringsView {
             inner_view: view
         }
