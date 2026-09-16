@@ -4,16 +4,16 @@ use super::strings::StringId;
 use super::view::*;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EdgeName (StringId);
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EdgeOrder (u32);
 
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EdgeType {
     Child = 0,
     Reference = 1,
