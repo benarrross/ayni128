@@ -1,14 +1,15 @@
 use super::graph::*;
 use super::node::NodeId;
+use super::strings::StringId;
 use super::view::*;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EdgeName (pub u32);
+pub struct EdgeName (StringId);
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct EdgeOrder (pub u32);
+pub struct EdgeOrder (u32);
 
 
 #[repr(u32)]
