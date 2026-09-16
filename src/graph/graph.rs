@@ -57,8 +57,8 @@ impl Graph {
         let mut strings = StringTable::new(blob_store.clone());
 
         // NYI expose these in a Well Known Strings list of some sort
-        let name_stringid = strings.map_to_id(b"name");
-        let type_stringid = strings.map_to_id(b"type");
+        let name_stringid = strings.map_to_id(b"Name");
+        let type_stringid = strings.map_to_id(b"Type");
 
         Graph {
             strings: Arc::new(Mutex::new(strings)),

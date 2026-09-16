@@ -20,7 +20,6 @@ fn create_one_node_and_attribute() {
 
     let view = graph.get_view();
 
-    let name_id = view.get_stringid(b"name");
     let attr_id = AttributeName(view.get_stringid(b"attr1"));
     let test_id = view.get_stringid(b"test_value");
 
