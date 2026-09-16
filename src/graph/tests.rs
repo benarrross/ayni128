@@ -31,11 +31,11 @@ fn create_one_node_and_attribute() {
 
     let view = graph.get_view();
 
-    let attr_id = AttributeName(view.get_stringid(b"attr1"));
-    let test_id = view.get_stringid(b"test_value");
+    let attr_name : AttributeName = view.get_stringid(b"attr1").into();
+    let test_value = view.get_stringid(b"test_value");
 
     let n1 = view.create_node();
-    view.set_attribute(n1, attr_id, test_id);
+    view.set_attribute(n1, attr_name, test_value);
 
-    assert_eq!(test_id, view.get_attribute(n1, attr_id).unwrap());
+    assert_eq!(test_value, view.get_attribute(n1, attr_name).unwrap());
 }

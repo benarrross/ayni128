@@ -92,7 +92,7 @@ impl Graph {
     }
 
     pub(crate) fn get_next_node_id(&self) -> NodeId {
-        NodeId(self.next_node_id.fetch_add(1, Ordering::Relaxed))
+        NodeId::new(self.next_node_id.fetch_add(1, Ordering::Relaxed))
     }
 }
 

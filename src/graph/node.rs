@@ -2,8 +2,32 @@ use crate::PersistedSortedList;
 use super::graph::*;
 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NodeId (pub u32); // implement from trait instead of making this public?
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NodeId (u32);
+
+impl NodeId {
+    pub(crate) fn new(value: u32) -> Self {
+        NodeId { 0: value }
+    }
+
+    pub(crate) fn as_u32(&self) -> u32 { 
+        self.0
+    }
+}
+
+
+impl From<NodeId> for u32 {
+    fn from(item: NodeId) -> u32 {
+        item.0
+    }
+}
+
+
+impl From<u32> for NodeId {
+    fn from(item: u32) -> NodeId {
+        NodeId(item)
+    }
+}
 
 
 pub struct NodesTable {
