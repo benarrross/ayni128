@@ -7,8 +7,10 @@ use crate::BlobId;
 use crate::blobstore::*;
 use crate::BlobStore;
 use crate::PersistedSortedList;
+use super::attribute::*;
 use super::view::*;
 use super::graph::*;
+use super::strings::StringId;
 
 
 #[test]
@@ -18,11 +20,12 @@ fn create_one_node_and_attribute() {
 
     let view = graph.get_view();
 
-    let name_attribute : AttributeName = AttributeName { 0: 99 };
-    let name_value : StringId = StringId { 0: 100 };
+    let name_id = view.get_stringid(b"name");
+    let attr_id = AttributeName(view.get_stringid(b"attr1"));
+    let test_id = view.get_stringid(b"test_value");
 
     let n1 = view.create_node();
-    view.set_attribute(n1, name_attribute, name_value);
+    view.set_attribute(n1, attr_id, test_id);
 
-    assert_eq!(name_value, view.get_attribute(n1, name_attribute).unwrap());
+    assert_eq!(test_id, view.get_attribute(n1, attr_id).unwrap());
 }

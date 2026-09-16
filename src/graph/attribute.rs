@@ -1,5 +1,31 @@
 use crate::PersistedSortedList;
 use super::graph::*;
+use super::strings::StringId;
+
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AttributeName (pub StringId);
+
+
+impl From<AttributeName> for u32 {
+    fn from(item: AttributeName) -> u32 {
+        item.0.0
+    }
+}
+
+
+impl From<StringId> for AttributeName {
+    fn from(item: StringId) -> AttributeName {
+        AttributeName(item)
+    }
+}
+
+
+impl From<u32> for AttributeName {
+    fn from(item: u32) -> AttributeName {
+        AttributeName(StringId(item))
+    }
+}
 
 
 pub struct Attribute {
@@ -70,21 +96,21 @@ pub mod by_node {
 
         fn encode(node: &NodeId, name: &AttributeName, value: &StringId) -> u128 {
             (node.0 as u128) << NODE_BIT_INDEX |
-            (name.0 as u128) << NAME_BIT_INDEX |
+            (name.0.0 as u128) << NAME_BIT_INDEX |
             (value.0 as u128) << VALUE_BIT_INDEX
         }
 
 
         fn encode_for_get(node: &NodeId, name: &AttributeName) -> u128 {
             (node.0 as u128) << NODE_BIT_INDEX |
-            (name.0 as u128) << NAME_BIT_INDEX
+            (name.0.0 as u128) << NAME_BIT_INDEX
         }
 
 
         fn decode(encoded: &u128) -> Attribute {
             Attribute {
                 node: NodeId(((*encoded & NODE_MASK) >> NODE_BIT_INDEX) as u32),
-                name: AttributeName(((*encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32),
+                name: (((*encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32).into(),
                 value: StringId(((*encoded & VALUE_MASK) >> VALUE_BIT_INDEX) as u32),
             }
         }
@@ -166,7 +192,7 @@ pub mod by_name {
         
 
         fn encode(name: &AttributeName, value: &StringId, node: &NodeId) -> u128 {
-            (name.0 as u128) << NAME_BIT_INDEX |
+            (name.0.0 as u128) << NAME_BIT_INDEX |
             (value.0 as u128) << VALUE_BIT_INDEX |
             (node.0 as u128) << NODE_BIT_INDEX
         }
@@ -175,7 +201,7 @@ pub mod by_name {
         fn decode(encoded: &u128) -> Attribute {
             Attribute {
                 node: NodeId(((*encoded & NODE_MASK) >> NODE_BIT_INDEX) as u32),
-                name: AttributeName(((*encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32),
+                name: (((*encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32).into(),
                 value: StringId(((*encoded & VALUE_MASK) >> VALUE_BIT_INDEX) as u32),
             }
         }

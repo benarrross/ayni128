@@ -6,12 +6,14 @@ use super::graph::*;
 use super::attribute;
 use super::node;
 use super::node::*;
-use super::attribute::{by_node::*, by_name::*};
+use super::attribute::{*, by_node::*, by_name::*};
 use super::edge::{*, edge_from::*, edge_to::*};
+use super::strings::*;
 
 
 pub struct GraphView<'a> {
     based_on: &'a Graph,
+    strings: Arc<Mutex<StringTable>>,
     nodes: NodesView<'a>,
     edges_from: EdgesFromView<'a>,
     edges_to: EdgesToView<'a>,
@@ -23,7 +25,8 @@ pub struct GraphView<'a> {
 impl <'a> GraphView<'a> {
 
     pub(crate) fn new(
-        based_on: &'a Graph, 
+        based_on: &'a Graph,
+        strings: Arc<Mutex<StringTable>>,
         nodes_table: &'a NodesTable,
         edges_from_table: &'a EdgesFromTable,
         edges_to_table: &'a EdgesToTable,
@@ -32,12 +35,19 @@ impl <'a> GraphView<'a> {
         
         GraphView { 
             based_on: based_on,
+            strings: strings,
             nodes: nodes_table.get_view(),
             edges_from: edges_from_table.get_view(),
             edges_to: edges_to_table.get_view(),
             attributes_by_node: attributes_by_node_table.get_view(),
             attributes_by_name: attributes_by_name_table.get_view()
         }
+    }
+
+
+    pub fn get_stringid(&self, value: &[u8]) -> StringId {
+        let mut s = self.strings.lock().unwrap();
+        s.map_to_id(value)
     }
 
     
