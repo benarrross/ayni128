@@ -8,6 +8,7 @@ use super::node;
 use super::node::*;
 use super::attribute::{*, by_node::*, by_name::*};
 use super::edge::{*, edge_from::*, edge_to::*};
+use super::node::*;
 use super::strings::*;
 
 

@@ -12,15 +12,11 @@ use crate::graph::edge::edge_from::*;
 use crate::graph::edge::edge_to::*;
 use crate::graph::strings::StringTable;
 use super::view::*;
-use super::node::NodesTable;
+use super::node::*;
 use super::strings::StringId;
 
 
 pub static TREE_NODE_SIZE : usize = 512;
-
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct NodeId (pub u32); // implement from trait instead of making this public?
 
 
 #[derive(Debug, Clone, Copy, PartialEq)]

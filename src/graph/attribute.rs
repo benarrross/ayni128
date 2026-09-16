@@ -1,5 +1,6 @@
 use crate::PersistedSortedList;
 use super::graph::*;
+use super::node::NodeId;
 use super::strings::StringId;
 
 

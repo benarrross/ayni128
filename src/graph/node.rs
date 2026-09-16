@@ -2,6 +2,10 @@ use crate::PersistedSortedList;
 use super::graph::*;
 
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct NodeId (pub u32); // implement from trait instead of making this public?
+
+
 pub struct NodesTable {
     inner_table: PersistedSortedList<TREE_NODE_SIZE>
 } 

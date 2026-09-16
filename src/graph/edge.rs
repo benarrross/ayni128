@@ -1,4 +1,5 @@
 use super::graph::*;
+use super::node::NodeId;
 use super::view::*;
 
 
