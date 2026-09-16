@@ -3,6 +3,22 @@ use super::node::NodeId;
 use super::view::*;
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EdgeName (pub u32);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct EdgeOrder (pub u32);
+
+
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum EdgeType {
+    Child = 0,
+    Reference = 1,
+}
+
+
 pub struct Edge {
     from: NodeId,
     to: NodeId,

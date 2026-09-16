@@ -19,20 +19,6 @@ use super::strings::StringId;
 pub static TREE_NODE_SIZE : usize = 512;
 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct EdgeName (pub u32);
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct EdgeOrder (pub u32);
-
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum EdgeType {
-    Child = 0,
-    Reference = 1,
-}
-
 pub struct Graph {
     strings: Arc<Mutex<StringTable>>,
     blobs: Arc<Mutex<BlobStore>>,
