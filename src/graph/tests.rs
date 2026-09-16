@@ -12,6 +12,17 @@ use super::view::*;
 use super::graph::*;
 use super::strings::StringId;
 
+/* 
+TO DO
+- Add several attributes and enumerate them
+- Add several nodes with attributes
+- Find nodes by attribute
+- Commit a view
+- Add edges between nodes
+- Enumerate edges to and from a node
+- Poplulate a graph, commit it, reload it from storage
+- Create many nodes in several concurrent transactions
+ */
 
 #[test]
 fn create_one_node_and_attribute() {
