@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 use crate::{blobstore::BlobId};
-use super::persistentsortedlist::*;
+use super::table::*;
 use super::nodehandle::*;
 
 

@@ -1,11 +1,11 @@
-mod persistentsortedlist;
+mod table;
 mod editor;
 mod node;
 mod nodehandle;
 mod nodelink;
 mod view;
 
-pub use persistentsortedlist::*;
+pub use table::*;
 pub use view::TableView;
 pub use view::TableIterator;
 

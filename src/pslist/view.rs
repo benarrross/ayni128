@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use crate::sortedarray::*;
-use super::persistentsortedlist::*;
+use super::table::*;
 use super::editor::*;
 use super::node::*;
 use super::nodehandle::*;
