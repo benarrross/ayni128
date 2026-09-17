@@ -1,4 +1,4 @@
-use crate::pslist::PersistedSortedList;
+use crate::pslist::Table;
 use crate::sortedarray::*;
 use super::node::*;
 use super::nodehandle::*;
@@ -6,7 +6,7 @@ use super::nodelink::*;
 
 
 /// Inserts a value into a node and splits it if necessary.
-pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_store: &PersistedSortedList<K>) -> SplitResult<K> {
+pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_store: &Table<K>) -> SplitResult<K> {
     if node.is_leaf() {
         node.values.insert(value);
 

@@ -74,7 +74,7 @@ impl<const K: usize> NodeLink<K> {
     }
 
     /// Gets a node handle from a link, loading the node from storage if necessary.
-    pub fn get_immutable_hnode(&self, node_store: &PersistedSortedList<K>) -> NodeHandle<K> {
+    pub fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 
@@ -99,7 +99,7 @@ impl<const K: usize> NodeLink<K> {
 
     /// Gets a mutable node handle from a link, loading the node from storage if necessary.
     /// This should ONLY be used by views when editing the tree.
-    pub fn get_mutable_hnode(&self, node_store: &PersistedSortedList<K>) -> NodeHandle<K> {
+    pub fn get_mutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 

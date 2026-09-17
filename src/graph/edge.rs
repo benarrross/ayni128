@@ -31,20 +31,20 @@ pub struct Edge {
 
 pub mod edge_from {
 
-    use crate::PersistedSortedList;
+    use crate::Table;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
 
 
     pub struct EdgesFromTable {
-        inner_table: PersistedSortedList<TREE_NODE_SIZE>
+        inner_table: Table<TREE_NODE_SIZE>
     } 
 
 
     impl<'a> EdgesFromTable {
 
-        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
             EdgesFromTable {
                 inner_table: table
             }
@@ -88,20 +88,20 @@ pub mod edge_from {
 
 pub mod edge_to {
 
-    use crate::PersistedSortedList;
+    use crate::Table;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
 
 
     pub struct EdgesToTable {
-        inner_table: PersistedSortedList<TREE_NODE_SIZE>
+        inner_table: Table<TREE_NODE_SIZE>
     } 
 
 
     impl<'a> EdgesToTable {
 
-        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
             EdgesToTable {
                 inner_table: table
             }

@@ -8,7 +8,7 @@ use super::nodelink::*;
 
 
 pub struct ListView<'a, const K: usize> {
-    based_on: &'a PersistedSortedList<K>,
+    based_on: &'a Table<K>,
     root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
     pub(super) puts: RefCell<SortedArray<u128>>,
     pub(super) deletes: RefCell<SortedArray<u128>>
@@ -19,7 +19,7 @@ impl<'a, const K: usize> ListView<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub fn new(based_on: &'a PersistedSortedList<K>, root_node_link: &NodeLink<K>) -> Self {
+    pub fn new(based_on: &'a Table<K>, root_node_link: &NodeLink<K>) -> Self {
         ListView { 
             based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),

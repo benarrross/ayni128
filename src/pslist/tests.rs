@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use crate::blobstore::*;
-use super::PersistedSortedList;
+use super::Table;
 use super::ListView;
 
 /*
@@ -21,7 +21,7 @@ TESTS TO ADD
 fn create_empty() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
-    let mut list = PersistedSortedList::<4>::new(Arc::new(Mutex::new(blobs)));
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 }
 
 
@@ -29,7 +29,7 @@ fn create_empty() {
 fn enum_empty() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
-    let mut list = PersistedSortedList::<4>::new(Arc::new(Mutex::new(blobs)));
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
     let mut view = list.get_view();
 
@@ -43,7 +43,7 @@ fn enum_empty() {
 fn insert_one() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
-    let mut list = PersistedSortedList::<4>::new(Arc::new(Mutex::new(blobs)));
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
     // Insert 99 in a view (but don't commit it yet)
     let view = list.get_view();
@@ -73,7 +73,7 @@ fn insert_one() {
 fn insert_several() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
-    let mut list = PersistedSortedList::<4>::new(Arc::new(Mutex::new(blobs)));
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let expected_values = vec![10, 32, 99, 999];
 
     let view = list.get_view();
@@ -112,7 +112,7 @@ fn insert_many_in_order() {
     const K:usize = 4;
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut blobs = BlobStore::new(memory_buffer);
-    let mut list = PersistedSortedList::<4>::new(Arc::new(Mutex::new(blobs)));
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let mut inserted_count = 0;
     let expected_values : Vec<u128> = (0..10).collect();
 

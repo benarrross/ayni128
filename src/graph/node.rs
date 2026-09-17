@@ -1,4 +1,4 @@
-use crate::PersistedSortedList;
+use crate::Table;
 use super::graph::*;
 
 
@@ -31,13 +31,13 @@ impl From<u32> for NodeId {
 
 
 pub struct NodesTable {
-    inner_table: PersistedSortedList<TREE_NODE_SIZE>
+    inner_table: Table<TREE_NODE_SIZE>
 } 
 
 
 impl<'a> NodesTable {
 
-    pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+    pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
         NodesTable {
             inner_table: table
         }

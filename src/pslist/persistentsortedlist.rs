@@ -10,14 +10,14 @@ use super::nodelink::*;
 use super::ListView;
 
 
-pub struct PersistedSortedList<const K: usize> {
+pub struct Table<const K: usize> {
     root_node_link: Mutex<NodeLink<K>>,
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>
 }
 
 
-impl<'a, const K: usize> PersistedSortedList<K> {
+impl<'a, const K: usize> Table<K> {
 
     pub fn new(backing_store: Arc<Mutex<BlobStore>>) -> Self {
 
@@ -30,7 +30,7 @@ impl<'a, const K: usize> PersistedSortedList<K> {
         let root_node_handle = NodeHandle::new(root_node); 
         nodes.insert(root_id, root_node_handle.clone());
 
-        PersistedSortedList { 
+        Table { 
             root_node_link: Mutex::new(NodeLink::<K>::immutable(&root_node_handle)),
             loaded_hnodes: RefCell::new(nodes), 
             backing_store: backing_store 

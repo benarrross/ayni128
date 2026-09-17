@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::*;
 use crate::BlobId;
 use crate::BlobStore;
-use crate::PersistedSortedList;
+use crate::Table;
 use crate::blobstore::*;
 use crate::graph::attribute::by_node::*;
 use crate::graph::attribute::by_name::*;
@@ -45,11 +45,11 @@ impl Graph {
         Graph {
             strings: Arc::new(Mutex::new(strings)),
             blobs: blob_store.clone(),
-            nodes: NodesTable::new(PersistedSortedList::new(blob_store.clone())),
-            edges_from: EdgesFromTable::new(PersistedSortedList::new(blob_store.clone())),
-            edges_to: EdgesToTable::new(PersistedSortedList::new(blob_store.clone())),
-            attributes_by_node: AttributesByNodeTable::new(PersistedSortedList::new(blob_store.clone())),
-            attributes_by_name: AttributesByNameTable::new(PersistedSortedList::new(blob_store.clone())),
+            nodes: NodesTable::new(Table::new(blob_store.clone())),
+            edges_from: EdgesFromTable::new(Table::new(blob_store.clone())),
+            edges_to: EdgesToTable::new(Table::new(blob_store.clone())),
+            attributes_by_node: AttributesByNodeTable::new(Table::new(blob_store.clone())),
+            attributes_by_name: AttributesByNameTable::new(Table::new(blob_store.clone())),
             next_node_id: AtomicU32::new(1),
         }
     }

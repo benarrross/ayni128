@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 use xxhash_rust::const_xxh3::xxh3_64 as const_xxh3;
 use xxhash_rust::xxh3::xxh3_64;
 use crate::BlobStore;
-use crate::PersistedSortedList;
+use crate::Table;
 
 
 static TREE_NODE_SIZE : usize = 512;
@@ -36,7 +36,7 @@ impl StringTable {
         StringTable {
             cache_by_id: HashMap::new(), 
             unsaved: Vec::new(), 
-            saved_strings_by_id: StoredStringsTable::new(PersistedSortedList::new(blob_store.clone())), 
+            saved_strings_by_id: StoredStringsTable::new(Table::new(blob_store.clone())), 
             blob_store: blob_store.clone() 
         }
     }
@@ -76,13 +76,13 @@ impl StringTable {
 
 
 struct StoredStringsTable {
-    inner_table: PersistedSortedList<TREE_NODE_SIZE>
+    inner_table: Table<TREE_NODE_SIZE>
 } 
 
 
 impl<'a> StoredStringsTable {
 
-    pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+    pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
         StoredStringsTable {
             inner_table: table
         }

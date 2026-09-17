@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use crate::BlobId;
 use crate::blobstore::*;
 use crate::BlobStore;
-use crate::PersistedSortedList;
+use crate::Table;
 use super::attribute::*;
 use super::view::*;
 use super::graph::*;

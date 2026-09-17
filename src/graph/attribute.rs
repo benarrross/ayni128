@@ -23,7 +23,7 @@ pub struct Attribute {
 
 pub mod by_node {
 
-    use crate::PersistedSortedList;
+    use crate::Table;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
@@ -66,12 +66,12 @@ pub mod by_node {
 
 
     pub struct AttributesByNodeTable {
-        inner_table: PersistedSortedList<TREE_NODE_SIZE>
+        inner_table: Table<TREE_NODE_SIZE>
     } 
 
     impl<'a> AttributesByNodeTable {
 
-        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
             AttributesByNodeTable {
                 inner_table: table
             }
@@ -140,7 +140,7 @@ pub mod by_node {
 
 pub mod by_name {
 
-    use crate::PersistedSortedList;
+    use crate::Table;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
@@ -155,13 +155,13 @@ pub mod by_name {
 
 
     pub struct AttributesByNameTable {
-        inner_table: PersistedSortedList<TREE_NODE_SIZE>
+        inner_table: Table<TREE_NODE_SIZE>
     } 
 
 
     impl<'a> AttributesByNameTable {
 
-        pub fn new(table: PersistedSortedList<TREE_NODE_SIZE>) -> Self {
+        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
             AttributesByNameTable {
                 inner_table: table
             }
