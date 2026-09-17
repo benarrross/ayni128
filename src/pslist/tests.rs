@@ -9,7 +9,6 @@ use super::TableView;
 
 /*
 TESTS TO ADD
-- Insert values out-of-order
 - view.get(n-1) on each to make sure we are chasing leaf nodes correctly for both get and enum (if separate code paths)
 - Insert at the beginning of a leaf node to ensure we are setting split values correctly up several levels
 - Concurrent transactions (make 2 or 3, edit them, then commit them after editing each one)
@@ -114,7 +113,7 @@ fn insert_many_in_order() {
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let mut inserted_count = 0;
-    let expected_values : Vec<u128> = (0..10).collect();
+    let expected_values : Vec<u128> = (1..50).collect();
 
     let view_v0 = list.get_view();
 
@@ -125,7 +124,7 @@ fn insert_many_in_order() {
         inserted_count += 1;
 
         let mut iter = view_v1.iter(0, u128::MAX);
-        for value in 0..inserted_count {
+        for value in 1..inserted_count+1 {
             assert_eq!(value, iter.next().unwrap());
         }
         assert!(iter.next().is_none());
@@ -140,6 +139,34 @@ fn insert_many_in_order() {
     list.commit(&view_v1);
 
     // Ensure we can see the edits
+    assert_expected_values(&expected_values, &list.get_view());
+}
+
+
+#[test]
+fn insert_many_out_of_order() {
+    const K:usize = 4;
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = BlobStore::new(memory_buffer);
+    let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
+    let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
+        1000, 1001, 1009, 1002, 46, 18, 19, 20, 21, 22, 23, 24, 25, 2, 9, 8, 7, 6, 5, 3, 800, 801, 799, 802, 798 ];
+
+    let view_v0 = list.get_view();
+
+    let view_v1 = list.get_view();
+    for value in &expected_values {
+        if (*value == 46) {
+            let x = *value;
+            assert_eq!(x, *value);
+        }
+        view_v1.put(*value as u128);
+        assert_eq!(*value, view_v1.get(*value));
+        assert!(view_v1.get(*value - 1) == *value - 1 || view_v1.get(*value - 1) == *value);
+    }
+    assert_expected_values(&expected_values, &view_v1);
+
+    list.commit(&view_v1);
     assert_expected_values(&expected_values, &list.get_view());
 }
 

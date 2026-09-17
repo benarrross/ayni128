@@ -83,7 +83,7 @@ impl<'a, const K: usize> Table<K> {
     }
 
 
-    pub(crate) fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
         unimplemented!()
     }
 }

@@ -68,6 +68,8 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// Inserts a value into the B+tree.
     pub fn put(&self, value : u128) {
 
+        self.check();
+
         // Update our list of added/deleted values. This is used to commit the transaction later.
         if self.deletes.borrow().exists(value) {
             self.deletes.borrow_mut().remove(value);
@@ -81,8 +83,16 @@ impl<'a, const K: usize> TableView<'a, K> {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone()));
         }
+
+        self.check();
     }
 
+
+    fn check(&self) {
+        let root_node = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
+        root_node.read_lock().check(&self.based_on);
+
+    }
 
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
@@ -118,7 +128,7 @@ pub struct TableIterator<'a, const K: usize> {
 
 impl<'a, const K: usize> TableIterator<'a,  K> {
 
-    pub fn new(based_on_view: &'a TableView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
+    pub(super) fn new(based_on_view: &'a TableView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         TableIterator { 
             based_on_view, 
             root_hnode: root_node.clone(), 

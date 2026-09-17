@@ -1,7 +1,8 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::io::Write;
-use crate::{blobstore::*};
-use crate::{sortedarray::*};
+use crate::blobstore::*;
+use crate::sortedarray::*;
+use crate::Table;
 use super::nodehandle::*;
 use super::nodelink::*;
 
@@ -106,4 +107,63 @@ impl<const K: usize> Node<K> {
 
 
     pub fn is_leaf(&self) -> bool { self.children.is_none() }
+
+
+    pub fn check(&self, table: &Table<K>) {
+
+        let mut last: u128 = 0;
+        for value in self.values.iter() {
+            assert(*value > last);
+            last = *value;
+        }
+
+        if (self.is_leaf()) {
+            assert(self.children.is_none());
+            if (!self.next_link.is_empty()) {
+                let next_hnode = self.next_link.get_immutable_hnode(table);
+                let next_node = next_hnode.read_lock();
+                assert(next_node.values[0] > self.values[self.values.len()-1]);
+            }
+        }
+        else {
+            assert(self.children.is_some());
+            assert(self.values.len() == self.children.as_ref().unwrap().iter().len() - 1);
+
+            for index in 0..self.values.len() {
+                let value = self.values[index];
+
+                let child_hnode_before = self.children.as_ref().unwrap().get(index).unwrap().get_immutable_hnode(table);
+                let child_node_before = child_hnode_before.read_lock();
+                assert(value > child_node_before.values[child_node_before.values.len()-1]);
+
+                let child_hnode_after = self.children.as_ref().unwrap().get(index+1).unwrap().get_immutable_hnode(table);
+                let child_node_after = child_hnode_after.read_lock();
+                assert(value == child_node_after.values[0]);
+            }
+
+            for child_nodelink in self.children.as_ref().unwrap().iter() {
+                let child_hnode = child_nodelink.get_immutable_hnode(table);
+                let child_node = child_hnode.read_lock();
+                child_node.check(table);
+
+            }
+        }
+    }
+
 }
+
+
+fn assert(condition: bool) {
+    if (!condition) {
+        panic!();
+    }
+}
+
+// #[derive(Debug)]
+// pub(super) struct Node<const K: usize> {
+//     pub debug_id: usize,
+//     pub id : Option<BlobId>,
+//     pub values : SortedArray<u128>,
+//     pub children: Option<Vec<NodeLink<K>>>,
+//     pub next_link : NodeLink<K>
+// }

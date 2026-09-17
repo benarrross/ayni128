@@ -47,34 +47,34 @@ impl<const K: usize> NodeLink<K> {
         }
     }
 
-    pub fn immutable(value: &NodeHandle<K>) -> Self {
+    pub(super) fn immutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
             inner: RwLock::new(NodeLinkKind::Immutable(value.clone())),
             label: format!("immutable {}", &value.node_debug_id)
         }
     }
 
-    pub fn mutable(value: &NodeHandle<K>) -> Self {
+    pub(super) fn mutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
             inner: RwLock::new(NodeLinkKind::Mutable(value.clone())),
             label: format!("mutable {}", &value.node_debug_id)
         }
     }
 
-    pub fn unloaded(value: BlobId) -> Self {
+    pub(super) fn unloaded(value: BlobId) -> Self {
         NodeLink {
             inner: RwLock::new(NodeLinkKind::Unloaded(value)),
             label: format!("unloaded {}", value)
         }
     }
 
-    pub fn is_empty(&self) -> bool {
+    pub(super) fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
         matches!(*read_lock, NodeLinkKind::Empty )
     }
 
     /// Gets a node handle from a link, loading the node from storage if necessary.
-    pub fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
+    pub(super) fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 
@@ -99,7 +99,7 @@ impl<const K: usize> NodeLink<K> {
 
     /// Gets a mutable node handle from a link, loading the node from storage if necessary.
     /// This should ONLY be used by views when editing the tree.
-    pub fn get_mutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
+    pub(super) fn get_mutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 
         let mut new_inner = NodeLinkKind::Empty;
 
