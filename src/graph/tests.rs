@@ -41,7 +41,6 @@ fn create_one_node_and_attribute() {
 }
 
 
-
 #[test]
 fn enumerate_several_attributes() {
     let mut memory_buffer = Box::new(MemoryStream::new());
