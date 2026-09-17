@@ -95,12 +95,12 @@ impl<'a> StoredStringsTable {
 
 
 struct StoredStringsView<'a> {
-    pub inner_view: crate::pslist::ListView<'a, TREE_NODE_SIZE>
+    pub inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
 }
 
 
 impl<'a> StoredStringsView<'a> {
-    pub fn new(view: crate::pslist::ListView<'a, TREE_NODE_SIZE>) -> Self {
+    pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
         StoredStringsView {
             inner_view: view
         }

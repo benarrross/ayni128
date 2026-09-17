@@ -7,7 +7,7 @@ use crate::pslist::editor::create_branch_node;
 use super::node::*;
 use super::nodehandle::*;
 use super::nodelink::*;
-use super::ListView;
+use super::TableView;
 
 
 pub struct Table<const K: usize> {
@@ -43,12 +43,12 @@ impl<'a, const K: usize> Table<K> {
     }
 
 
-    pub fn get_view(&'a self) -> ListView<'a, K> {
-        ListView::new(self, &*self.root_node_link.lock().unwrap())
+    pub fn get_view(&'a self) -> TableView<'a, K> {
+        TableView::new(self, &*self.root_node_link.lock().unwrap())
     }
 
 
-    pub fn commit(&self, view: &ListView<'a, K>) {
+    pub fn commit(&self, view: &TableView<'a, K>) {
 
         // Get a write lock on our root node that will persist through the whole commit.
         // This will ensure only one commit happens at a time.

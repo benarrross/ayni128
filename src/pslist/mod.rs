@@ -6,7 +6,7 @@ mod nodelink;
 mod view;
 
 pub use persistentsortedlist::*;
-pub use view::ListView;
-pub use view::ViewIterator;
+pub use view::TableView;
+pub use view::TableIterator;
 
 mod tests;

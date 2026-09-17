@@ -57,12 +57,12 @@ pub mod edge_from {
 
     
     pub struct EdgesFromView<'a> {
-        inner_view: crate::pslist::ListView<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
     }
 
 
     impl<'a> EdgesFromView<'a> {
-        pub fn new(view: crate::pslist::ListView<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
             EdgesFromView {
                 inner_view: view
             }
@@ -114,12 +114,12 @@ pub mod edge_to {
     
 
     pub struct EdgesToView<'a> {
-        inner_view: crate::pslist::ListView<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
     }
 
 
     impl<'a> EdgesToView<'a> {
-        pub fn new(view: crate::pslist::ListView<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
             EdgesToView {
                 inner_view: view
             }
