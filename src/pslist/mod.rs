@@ -7,5 +7,6 @@ mod view;
 
 pub use persistentsortedlist::*;
 pub use view::View;
+pub use view::ViewIterator;
 
 mod tests;

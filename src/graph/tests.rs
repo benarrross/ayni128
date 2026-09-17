@@ -39,3 +39,42 @@ fn create_one_node_and_attribute() {
 
     assert_eq!(test_value, view.get_attribute(n1, attr_name).unwrap());
 }
+
+
+
+#[test]
+fn enumerate_several_attributes() {
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut graph = Graph::new(memory_buffer);
+
+    let view = graph.get_view();
+
+    let test_data: [(&[u8], &[u8]); _] = [
+        (b"a1", b"value1"),
+        (b"a2", b"value2"),
+        (b"a3", b"value3"),
+        (b"a4", b"value4")
+    ];
+
+    let n1 = view.create_node();
+    for datum in test_data {
+        view.set_attribute_str(n1, datum.0, datum.1);
+    }
+
+    let mut test_data_iter = test_data.iter();
+    for attr in view.iter_attributes(n1) {
+
+        let datum = &test_data_iter.next().unwrap();
+        let expected_name = datum.0;
+        let expected_value = datum.1;
+
+        let name = view.get_string(&attr.name.into());
+        let value = view.get_string(&attr.value.into());
+
+        assert_eq!(n1, attr.node);
+        assert_eq!(expected_name, name);
+        assert_eq!(expected_value, value);
+    }
+
+    assert_eq!(None, test_data_iter.next());
+}

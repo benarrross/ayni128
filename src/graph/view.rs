@@ -18,7 +18,7 @@ pub struct GraphView<'a> {
     nodes: NodesView<'a>,
     edges_from: EdgesFromView<'a>,
     edges_to: EdgesToView<'a>,
-    attributes_by_node: AttributesByNodeView<'a>,
+    attributes_by_node: AttributesByNodeTableView<'a>,
     attributes_by_name: AttributesByNameView<'a>,
 }
 
@@ -51,6 +51,11 @@ impl <'a> GraphView<'a> {
         s.map_to_id(value)
     }
 
+
+    pub fn get_string(&self, id: &StringId) -> Vec<u8> {
+        let mut s = self.strings.lock().unwrap();
+        s.get(id)
+    }
     
     pub fn create_node(&self) -> NodeId {
         let node = self.based_on.get_next_node_id();
@@ -60,13 +65,21 @@ impl <'a> GraphView<'a> {
 
 
     pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
-        self.attributes_by_node.put(&node, &name, &value);
-        self.attributes_by_name.put(&name, &value, &node);
+        self.attributes_by_node.put(node, name, value);
+        self.attributes_by_name.put(name, value, node);
+    }
+
+
+    pub fn set_attribute_str(&self, node: NodeId, name: &[u8], value: &[u8]) {
+        let name_id : AttributeName = self.get_stringid(name).into();
+        let value_id : StringId = self.get_stringid(value);
+        self.attributes_by_node.put(node, name_id, value_id);
+        self.attributes_by_name.put(name_id, value_id, node);
     }
 
 
     pub fn get_attribute(&self, node: NodeId, name: AttributeName) -> Option<StringId> {
-        let attr = self.attributes_by_node.get(&node, &name);
+        let attr = self.attributes_by_node.get(node, name);
         if (attr.node == node && attr.name == name) {
             Some(attr.value)
         } else {
@@ -75,8 +88,8 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn iter_attributes(&self, node: NodeId) -> AttributeByNodeIterator<'a> {
-        unimplemented!();
+    pub fn iter_attributes(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
+        self.attributes_by_node.iter_attributes(node)
     }
 
 

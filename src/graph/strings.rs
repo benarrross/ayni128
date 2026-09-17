@@ -56,7 +56,7 @@ impl StringTable {
     }
 
 
-    pub fn get(&self, id: StringId) -> Vec<u8> {
+    pub fn get(&self, id: &StringId) -> Vec<u8> {
         match self.cache_by_id.get(&id) {
             Some(value) => value.to_vec(),
             None => {
