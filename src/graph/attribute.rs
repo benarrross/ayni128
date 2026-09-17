@@ -84,11 +84,11 @@ pub mod by_node {
 
 
     pub struct AttributesByNodeTableView<'a> {
-        inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::ListView<'a, TREE_NODE_SIZE>
     }
 
     impl<'a> AttributesByNodeTableView<'a> {
-        pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::ListView<'a, TREE_NODE_SIZE>) -> Self {
             AttributesByNodeTableView {
                 inner_view: view
             }
@@ -115,7 +115,7 @@ pub mod by_node {
     }
 
     impl <'a> AttributeByNodeIterator<'a> {
-        pub fn new(based_on_view: &'a crate::pslist::View<TREE_NODE_SIZE>, node: NodeId) -> Self {
+        pub fn new(based_on_view: &'a crate::pslist::ListView<TREE_NODE_SIZE>, node: NodeId) -> Self {
             let inner_iter = based_on_view.iter(
                 encode_for_enum_min(node), encode_for_enum_mac(node));
             AttributeByNodeIterator { 
@@ -174,12 +174,12 @@ pub mod by_name {
 
 
     pub struct AttributesByNameView<'a> {
-        inner_view: crate::pslist::View<'a, TREE_NODE_SIZE>
+        inner_view: crate::pslist::ListView<'a, TREE_NODE_SIZE>
     }
 
     
     impl<'a> AttributesByNameView<'a> {
-        pub fn new(view: crate::pslist::View<'a, TREE_NODE_SIZE>) -> Self {
+        pub fn new(view: crate::pslist::ListView<'a, TREE_NODE_SIZE>) -> Self {
             AttributesByNameView {
                 inner_view: view
             }

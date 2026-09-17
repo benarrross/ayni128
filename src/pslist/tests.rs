@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use crate::blobstore::*;
 use super::PersistedSortedList;
-use super::View;
+use super::ListView;
 
 /*
 TESTS TO ADD
@@ -144,7 +144,7 @@ fn insert_many_in_order() {
 }
 
 
-fn assert_expected_values<'a, const K: usize>(expected: &Vec<u128>, actual: &View<'a, K>) {
+fn assert_expected_values<'a, const K: usize>(expected: &Vec<u128>, actual: &ListView<'a, K>) {
 
     let mut actual_iter = actual.iter(0, u128::MAX).into_iter();
     for expected_value in expected {

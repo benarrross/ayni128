@@ -7,7 +7,7 @@ use super::nodehandle::*;
 use super::nodelink::*;
 
 
-pub struct View<'a, const K: usize> {
+pub struct ListView<'a, const K: usize> {
     based_on: &'a PersistedSortedList<K>,
     root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
     pub(super) puts: RefCell<SortedArray<u128>>,
@@ -15,12 +15,12 @@ pub struct View<'a, const K: usize> {
 }
 
 
-impl<'a, const K: usize> View<'a, K> {
+impl<'a, const K: usize> ListView<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
     pub fn new(based_on: &'a PersistedSortedList<K>, root_node_link: &NodeLink<K>) -> Self {
-        View { 
+        ListView { 
             based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),
             puts: RefCell::new(SortedArray::new()),
@@ -107,7 +107,7 @@ impl<'a, const K: usize> View<'a, K> {
 
 
 pub struct ViewIterator<'a, const K: usize> {
-    based_on_view: &'a View<'a, K>,
+    based_on_view: &'a ListView<'a, K>,
     root_hnode: NodeHandle<K>,
     min: u128,
     mac: u128,
@@ -118,7 +118,7 @@ pub struct ViewIterator<'a, const K: usize> {
 
 impl<'a, const K: usize> ViewIterator<'a,  K> {
 
-    pub fn new(based_on_view: &'a View<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
+    pub fn new(based_on_view: &'a ListView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         ViewIterator { 
             based_on_view, 
             root_hnode: root_node.clone(), 
