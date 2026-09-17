@@ -6,7 +6,7 @@ use super::nodelink::*;
 
 
 /// Inserts a value into a node and splits it if necessary.
-pub(super) fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_store: &Table<K>) -> SplitResult<K> {
+pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_store: &Table<K>) -> SplitResult<K> {
     if node.is_leaf() {
         node.values.insert(value);
 
@@ -68,7 +68,7 @@ fn split_branch_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
 
 
 /// Creates a new branch node from the specified left and right nodes
-pub(super) fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
+pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
 
     // Make a new parent node that has the old node on its left and the new node on its right
     let right_node = &*right_hnode.read_lock();

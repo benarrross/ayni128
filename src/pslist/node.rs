@@ -17,7 +17,7 @@ static NEXT_NODE_DEBUG_ID: AtomicUsize  = AtomicUsize::new(1);
 
 
 #[derive(Debug)]
-pub struct Node<const K: usize> {
+pub(super) struct Node<const K: usize> {
     pub debug_id: usize,
     pub id : Option<BlobId>,
     pub values : SortedArray<u128>,
