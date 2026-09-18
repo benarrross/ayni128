@@ -156,26 +156,28 @@ fn insert_many_out_of_order() {
 
     let view_v1 = list.get_view();
     for value in &expected_values {
-        if (*value == 46) {
-            let x = *value;
-            assert_eq!(x, *value);
-        }
         view_v1.put(*value as u128);
         assert_eq!(*value, view_v1.get(*value));
         assert!(view_v1.get(*value - 1) == *value - 1 || view_v1.get(*value - 1) == *value);
     }
-    assert_expected_values(&expected_values, &view_v1);
+    let mut expected_values_sorted = expected_values.to_vec();
+    expected_values_sorted.sort();
+    assert_expected_values(&expected_values_sorted, &view_v1);
 
     list.commit(&view_v1);
-    assert_expected_values(&expected_values, &list.get_view());
+    assert_expected_values(&expected_values_sorted, &list.get_view());
 }
 
 
-fn assert_expected_values<'a, const K: usize>(expected: &Vec<u128>, actual: &TableView<'a, K>) {
+fn assert_expected_values<'a, const K: usize>(expected: &[u128], actual: &TableView<'a, K>) {
+
+    let mut expected_values_sorted = expected.to_vec();
+    expected_values_sorted.sort();
 
     let mut actual_iter = actual.iter(0, u128::MAX).into_iter();
-    for expected_value in expected {
-        assert_eq!(*expected_value, actual_iter.next().unwrap());
+    for expected_value in expected.iter() {
+        let actual_value = actual_iter.next().unwrap();
+        assert_eq!(*expected_value, actual_value);
     }
     assert!(actual_iter.next().is_none());
 
