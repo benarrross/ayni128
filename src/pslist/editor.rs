@@ -6,7 +6,8 @@ use super::nodelink::*;
 
 
 /// Inserts a value into a node and splits it if necessary.
-pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_store: &Table<K>) -> SplitResult<K> {
+pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, table: &Table<K>) -> SplitResult<K> {
+
     if node.is_leaf() {
         node.values.insert(value);
 
@@ -19,13 +20,13 @@ pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, node_sto
     else {
         // Find the child this should go in and ask the child to insert the value
         let index = node.values.find_range_index(value);
-        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable_hnode(node_store);
+        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable_hnode(table);
 
         // Handle the child splitting (which might force us to split the current node also)
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, node_store) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, table) {
 
             let right_node = &*right_hnode.read_lock();
-            let first_value_in_right_node = right_node.values[0];  // NYI This is wrong for branch nodes -- need a node.first_value() method
+            let first_value_in_right_node = right_node.first_value(table);
 
             node.values.insert(first_value_in_right_node);
             let new_child_index = node.values.find_range_index(first_value_in_right_node);
@@ -60,20 +61,22 @@ fn split_leaf_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
 
 /// Splits the right half of a node off into a new branch node and returns it.
 fn split_branch_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
+
     let split_index = node.values.len() / 2;
-    let right_values = node.values.split_off(split_index);
-    let right_children = node.children.as_mut().unwrap().split_off(split_index);
+    let right_values = node.values.split_off(split_index + 1);
+    node.values.pop();
+    let right_children = node.children.as_mut().unwrap().split_off(split_index + 1);
     Node::new_branch(right_values, right_children)
 }
 
 
 /// Creates a new branch node from the specified left and right nodes
-pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>) -> NodeHandle<K> {
+pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>, table: &Table<K>) -> NodeHandle<K> {
 
     // Make a new parent node that has the old node on its left and the new node on its right
     let right_node = &*right_hnode.read_lock();
     Node::new_branch(
-        SortedArray::from_values(vec![right_node.values[0]]),   // NYI This is wrong for branch nodes -- need a node.first_value() method
+        SortedArray::from_values(vec![right_node.first_value(table)]),
         vec![
             NodeLink::mutable(&left_hnode),
             NodeLink::mutable(&right_hnode) 

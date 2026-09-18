@@ -66,7 +66,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
 
     /// Inserts a value into the B+tree.
-    pub fn put(&self, value : u128) {
+    pub fn put(&self, value: u128) {
 
         self.check();
 
@@ -81,14 +81,14 @@ impl<'a, const K: usize> TableView<'a, K> {
         let mutable_root_hnode = &self.root_node_link.borrow().get_mutable_hnode(self.based_on);
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
            *self.root_node_link.borrow_mut() = NodeLink::mutable(
-                &create_branch_node(&mutable_root_hnode, right_hnode.clone()));
+                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on));
         }
 
         self.check();
     }
 
 
-    fn check(&self) {
+    pub(super) fn check(&self) {
         let root_node = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
         root_node.read_lock().check(&self.based_on);
 

@@ -37,6 +37,11 @@ impl<T: Copy + Ord> SortedArray<T> {
         };        
     }
 
+    
+    pub fn pop(&mut self) {
+        self.values.pop();
+    }
+
 
     pub fn find_index(&self, value: T) -> usize {
         match self.values.binary_search(&value) {

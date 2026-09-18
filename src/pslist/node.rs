@@ -109,6 +109,18 @@ impl<const K: usize> Node<K> {
     pub fn is_leaf(&self) -> bool { self.children.is_none() }
 
 
+    pub fn first_value(&self, table: &Table<K>) -> u128 {
+        if (self.is_leaf()) {
+            self.values[0]
+        }
+        else {
+            let first_child_hnode = self.children.as_ref().unwrap().get(0).unwrap().get_immutable_hnode(table);
+            let first_child_node = first_child_hnode.read_lock();
+            first_child_node.first_value(table)
+        }
+    }
+
+
     pub fn check(&self, table: &Table<K>) {
 
         let mut last: u128 = 0;
@@ -138,7 +150,9 @@ impl<const K: usize> Node<K> {
 
                 let child_hnode_after = self.children.as_ref().unwrap().get(index+1).unwrap().get_immutable_hnode(table);
                 let child_node_after = child_hnode_after.read_lock();
-                assert(value == child_node_after.values[0]);
+                assert(value == child_node_after.first_value(table));
+                let x =  child_node_after.values[0];
+                assert(value <= child_node_after.values[0]);
             }
 
             for child_nodelink in self.children.as_ref().unwrap().iter() {
@@ -149,7 +163,6 @@ impl<const K: usize> Node<K> {
             }
         }
     }
-
 }
 
 
