@@ -80,6 +80,11 @@ pub mod by_node {
         pub fn get_view(&'a self) -> AttributesByNodeTableView<'a> {
             AttributesByNodeTableView::new(self.inner_table.get_view())
         }
+
+
+        pub fn commit(&self, view: &'a AttributesByNodeTableView) {
+            self.inner_table.commit(&view.inner_view);
+        }
     }
 
 
@@ -167,20 +172,25 @@ pub mod by_name {
             }
         }
 
-        pub fn get_view(&'a self) -> AttributesByNameView<'a> {
-            AttributesByNameView::new(self.inner_table.get_view())
+        pub fn get_view(&'a self) -> AttributesByNameTableView<'a> {
+            AttributesByNameTableView::new(self.inner_table.get_view())
+        }
+
+
+        pub fn commit(&self, view: &'a AttributesByNameTableView) {
+            self.inner_table.commit(&view.inner_view);
         }
     }
 
 
-    pub struct AttributesByNameView<'a> {
+    pub struct AttributesByNameTableView<'a> {
         inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
     }
 
     
-    impl<'a> AttributesByNameView<'a> {
+    impl<'a> AttributesByNameTableView<'a> {
         pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
-            AttributesByNameView {
+            AttributesByNameTableView {
                 inner_view: view
             }
         }

@@ -74,12 +74,34 @@ impl Graph {
 
 
     pub fn commit<'a>(&self, view: &GraphView<'a>) {
-        unimplemented!();
+        
+        self.nodes.commit(&view.nodes);
+        self.attributes_by_name.commit(&view.attributes_by_name);
+        self.attributes_by_node.commit(&view.attributes_by_node);
+        self.edges_from.commit(&view.edges_from);
+        self.edges_to.commit(&view.edges_to);
+        //self.strings.commit();
+
+        // NYI write a new blob header with the proper offset for each root node
     }
+
 
     pub(crate) fn get_next_node_id(&self) -> NodeId {
         NodeId::new(self.next_node_id.fetch_add(1, Ordering::Relaxed))
     }
 }
 
+
+
+// pub struct Graph {
+//     strings: Arc<Mutex<StringTable>>,
+//     blobs: Arc<Mutex<BlobStore>>,
+//     nodes: NodesTable,
+//     edges_from: EdgesFromTable,
+//     edges_to: EdgesToTable,
+//     attributes_by_node: AttributesByNodeTable,
+//     attributes_by_name: AttributesByNameTable,
+//     // NYI bloom filters table
+//     next_node_id: AtomicU32
+// }
 

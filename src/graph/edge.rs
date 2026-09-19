@@ -53,6 +53,11 @@ pub mod edge_from {
         pub fn get_view(&'a self) -> EdgesFromView<'a> {
             EdgesFromView::new(self.inner_table.get_view())
         }
+
+
+        pub fn commit(&self, view: &'a EdgesFromView) {
+            self.inner_table.commit(&view.inner_view);
+        }
     }
 
     
@@ -109,6 +114,11 @@ pub mod edge_to {
 
         pub fn get_view(&'a self) -> EdgesToView<'a> {
             EdgesToView::new(self.inner_table.get_view())
+        }
+
+
+        pub fn commit(&self, view: &'a EdgesToView) {
+            self.inner_table.commit(&view.inner_view);
         }
     }
     

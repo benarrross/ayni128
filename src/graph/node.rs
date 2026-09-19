@@ -46,6 +46,11 @@ impl<'a> NodesTable {
     pub fn get_view(&'a self) -> NodesView<'a> {
         NodesView::new(self.inner_table.get_view())
     }
+
+
+    pub fn commit(&self, view: &'a NodesView) {
+        self.inner_table.commit(&view.inner_view);
+    }
 }
 
 

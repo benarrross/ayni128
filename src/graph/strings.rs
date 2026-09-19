@@ -68,7 +68,8 @@ impl StringTable {
     }
 
 
-    pub fn save(&self) {
+    pub fn commit(&self) {
+        //self.saved_strings_by_id.commit()
         unimplemented!();
     }
 }
@@ -88,20 +89,25 @@ impl<'a> StoredStringsTable {
         }
     }
 
-    pub fn get_view(&'a self) -> StoredStringsView<'a> {
-        StoredStringsView::new(self.inner_table.get_view())
+    pub fn get_view(&'a self) -> StoredStringsTableView<'a> {
+        StoredStringsTableView::new(self.inner_table.get_view())
+    }
+
+
+    pub fn commit(&self, view: &'a StoredStringsTableView) {
+        self.inner_table.commit(&view.inner_view);
     }
 }
 
 
-struct StoredStringsView<'a> {
+struct StoredStringsTableView<'a> {
     pub inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
 }
 
 
-impl<'a> StoredStringsView<'a> {
+impl<'a> StoredStringsTableView<'a> {
     pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
-        StoredStringsView {
+        StoredStringsTableView {
             inner_view: view
         }
     }

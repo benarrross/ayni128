@@ -13,13 +13,13 @@ use super::strings::*;
 
 
 pub struct GraphView<'a> {
-    based_on: &'a Graph,
-    strings: Arc<Mutex<StringTable>>,
-    nodes: NodesView<'a>,
-    edges_from: EdgesFromView<'a>,
-    edges_to: EdgesToView<'a>,
-    attributes_by_node: AttributesByNodeTableView<'a>,
-    attributes_by_name: AttributesByNameView<'a>,
+    pub(crate) based_on: &'a Graph,
+    pub(crate) strings: Arc<Mutex<StringTable>>,
+    pub(crate) nodes: NodesView<'a>,
+    pub(crate) edges_from: EdgesFromView<'a>,
+    pub(crate) edges_to: EdgesToView<'a>,
+    pub(crate) attributes_by_node: AttributesByNodeTableView<'a>,
+    pub(crate) attributes_by_name: AttributesByNameTableView<'a>,
 }
 
 

@@ -54,6 +54,10 @@ fn enumerate_several_attributes() {
     }
 
     assert_attributes_match(&test_data, n1, &view);
+    graph.commit(&view);
+
+    let view = graph.get_view();
+    assert_attributes_match(&test_data, n1, &view);
 }
 
 
