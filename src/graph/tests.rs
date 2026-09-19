@@ -3,18 +3,11 @@ use std::io::Cursor;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
-use crate::BlobId;
 use crate::blobstore::*;
-use crate::BlobStore;
-use crate::Table;
-use super::attribute::*;
-use super::view::*;
-use super::graph::*;
-use super::strings::StringId;
+use crate::graph::*;
 
 /* 
 TO DO
-- Add several attributes and enumerate them
 - Add several nodes with attributes
 - Find nodes by attribute
 - Commit a view
@@ -60,20 +53,26 @@ fn enumerate_several_attributes() {
         view.set_attribute_str(n1, datum.0, datum.1);
     }
 
-    let mut test_data_iter = test_data.iter();
-    for attr in view.iter_attributes(n1) {
+    assert_attributes_match(&test_data, n1, &view);
+}
 
-        let datum = &test_data_iter.next().unwrap();
-        let expected_name = datum.0;
-        let expected_value = datum.1;
 
-        let name = view.get_string(&attr.name.into());
-        let value = view.get_string(&attr.value.into());
+fn assert_attributes_match(test_data: &[(&[u8], &[u8])], node: NodeId, graph_view: &GraphView) {
+    let mut test_copy = test_data.to_vec();
+    for attr in graph_view.iter_attributes(node) {
+        let name = graph_view.get_string(&attr.name.into());
+        let value = graph_view.get_string(&attr.value.into());
 
-        assert_eq!(n1, attr.node);
-        assert_eq!(expected_name, name);
-        assert_eq!(expected_value, value);
+        let mut found = false;
+        for index in 0..test_copy.len() {
+            let datum = test_copy[index];
+            if (datum.0 == name && datum.1 == value) {
+                test_copy.remove(index);
+                found = true;
+                break;
+            }
+        }
+        assert!(found);
     }
-
-    assert_eq!(None, test_data_iter.next());
+    assert_eq!(0, test_copy.len());
 }

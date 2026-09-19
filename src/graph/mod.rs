@@ -8,6 +8,7 @@ mod view;
 mod tests;
 
 pub use graph::Graph;
+pub use view::GraphView;
 pub use attribute::Attribute;
 pub use attribute::AttributeName;
 pub use edge::{Edge, EdgeName, EdgeOrder, EdgeType };
