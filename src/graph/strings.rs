@@ -13,6 +13,12 @@ static TREE_NODE_SIZE : usize = 512;
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct StringId (pub u32);
 
+impl StringId {
+    pub(crate) fn as_u32(&self) -> u32 { 
+        self.0
+    }
+}
+
 
 impl From<u64> for StringId {
     fn from(hash: u64) -> StringId {

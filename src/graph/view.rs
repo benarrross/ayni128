@@ -6,7 +6,7 @@ use super::graph::*;
 use super::attribute;
 use super::node;
 use super::node::*;
-use super::attribute::{*, by_node::*, by_name::*};
+use super::attribute::{*, by_node::*, by_attr::*};
 use super::edge::{*, edge_from::*, edge_to::*};
 use super::node::*;
 use super::strings::*;
@@ -19,7 +19,7 @@ pub struct GraphView<'a> {
     pub(crate) edges_from: EdgesFromView<'a>,
     pub(crate) edges_to: EdgesToView<'a>,
     pub(crate) attributes_by_node: AttributesByNodeTableView<'a>,
-    pub(crate) attributes_by_name: AttributesByNameTableView<'a>,
+    pub(crate) nodes_by_attribute: NodesByAttributeTableView<'a>,
 }
 
 
@@ -32,7 +32,7 @@ impl <'a> GraphView<'a> {
         edges_from_table: &'a EdgesFromTable,
         edges_to_table: &'a EdgesToTable,
         attributes_by_node_table: &'a AttributesByNodeTable,
-        attributes_by_name_table: &'a AttributesByNameTable) -> Self {
+        attributes_by_name_table: &'a NodesByAttributeTable) -> Self {
         
         GraphView { 
             based_on: based_on,
@@ -41,7 +41,7 @@ impl <'a> GraphView<'a> {
             edges_from: edges_from_table.get_view(),
             edges_to: edges_to_table.get_view(),
             attributes_by_node: attributes_by_node_table.get_view(),
-            attributes_by_name: attributes_by_name_table.get_view()
+            nodes_by_attribute: attributes_by_name_table.get_view()
         }
     }
 
@@ -66,7 +66,7 @@ impl <'a> GraphView<'a> {
 
     pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
         self.attributes_by_node.put(node, name, value);
-        self.attributes_by_name.put(name, value, node);
+        self.nodes_by_attribute.put(name, value, node);
     }
 
 
@@ -74,7 +74,7 @@ impl <'a> GraphView<'a> {
         let name_id : AttributeName = self.get_stringid(name).into();
         let value_id : StringId = self.get_stringid(value);
         self.attributes_by_node.put(node, name_id, value_id);
-        self.attributes_by_name.put(name_id, value_id, node);
+        self.nodes_by_attribute.put(name_id, value_id, node);
     }
 
 
@@ -93,8 +93,8 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn iter_nodes_with_attribute(&self, name: AttributeName, value: StringId) -> AttributeByNameValueIterator<'a> {
-        unimplemented!();
+    pub fn iter_nodes_with_attribute(&'a self, name: AttributeName, value: StringId) -> NodeByAttributeIterator<'a> {
+        self.nodes_by_attribute.iter_nodes(name, value)
     }
 
 

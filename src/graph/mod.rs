@@ -13,3 +13,4 @@ pub use attribute::Attribute;
 pub use attribute::AttributeName;
 pub use edge::{Edge, EdgeName, EdgeOrder, EdgeType };
 pub use node::NodeId;
+pub use strings::StringId;

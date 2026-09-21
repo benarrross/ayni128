@@ -7,6 +7,11 @@ use super::strings::StringId;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct AttributeName (StringId);
 
+impl AttributeName {
+    pub(crate) fn as_u32(&self) -> u32 { 
+        self.0.as_u32()
+    }
+}
 
 impl From<AttributeName> for u32 { fn from(item: AttributeName) -> u32 { item.0.0 } }
 impl From<AttributeName> for StringId { fn from(item: AttributeName) -> StringId { item.0 } }
@@ -39,8 +44,8 @@ pub mod by_node {
 
     fn encode(node: NodeId, name: AttributeName, value: StringId) -> u128 {
         (node.as_u32() as u128) << NODE_BIT_INDEX |
-        (name.0.0 as u128) << NAME_BIT_INDEX |
-        (value.0 as u128) << VALUE_BIT_INDEX
+        (name.as_u32() as u128) << NAME_BIT_INDEX |
+        (value.as_u32() as u128) << VALUE_BIT_INDEX
     }
 
     fn encode_for_enum_min(node: NodeId) -> u128 {
@@ -53,14 +58,14 @@ pub mod by_node {
 
     fn encode_for_get(node: NodeId, name: AttributeName) -> u128 {
         (node.as_u32() as u128) << NODE_BIT_INDEX |
-        (name.0.0 as u128) << NAME_BIT_INDEX
+        (name.as_u32() as u128) << NAME_BIT_INDEX
     }
 
     fn decode(encoded: u128) -> Attribute {
         Attribute {
-            node: (((encoded & NODE_MASK) >> NODE_BIT_INDEX) as u32).into(),
-            name: (((encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32).into(),
-            value: StringId(((encoded & VALUE_MASK) >> VALUE_BIT_INDEX) as u32),
+            node: ((((encoded & NODE_MASK) >> NODE_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+            name: ((((encoded & NAME_MASK) >> NAME_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+            value: StringId((((encoded & VALUE_MASK) >> VALUE_BIT_INDEX) & 0xFFFFFFFF) as u32),
         }
     }
 
@@ -109,7 +114,7 @@ pub mod by_node {
             decode(found_encoded)
         }
 
-        pub fn iter_attributes(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {  
+        pub fn iter_attributes(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
             AttributeByNodeIterator::new(&self.inner_view, node)   
         }
     }
@@ -119,13 +124,12 @@ pub mod by_node {
         inner_iter: TableIterator<'a, TREE_NODE_SIZE>
     }
 
+
     impl <'a> AttributeByNodeIterator<'a> {
         pub fn new(based_on_view: &'a crate::pslist::TableView<TREE_NODE_SIZE>, node: NodeId) -> Self {
             let inner_iter = based_on_view.iter(
                 encode_for_enum_min(node), encode_for_enum_mac(node));
-            AttributeByNodeIterator { 
-                inner_iter: inner_iter }
-
+            AttributeByNodeIterator { inner_iter }
         }
     }
 
@@ -143,99 +147,122 @@ pub mod by_node {
 }
 
 
-pub mod by_name {
+pub mod by_attr {
 
     use crate::Table;
     use crate::graph::graph::*;
     use crate::graph::view::*;
     use super::*;
     
-    static NODE_BIT_INDEX : usize = 32;
     static NAME_BIT_INDEX : usize = 96;
     static VALUE_BIT_INDEX : usize = 64;
+    static NODE_BIT_INDEX : usize = 32;
 
     static NAME_MASK : u128 = 0xFFFFFFFF << NAME_BIT_INDEX;
     static VALUE_MASK : u128 = 0xFFFFFFFF << VALUE_BIT_INDEX;
     static NODE_MASK : u128 = 0xFFFFFFFF << NODE_BIT_INDEX;
 
 
-    pub struct AttributesByNameTable {
+    fn encode(name: AttributeName, value: StringId, node: NodeId) -> u128 {
+        (name.as_u32() as u128) << NAME_BIT_INDEX |
+        (value.as_u32() as u128) << VALUE_BIT_INDEX |
+        (node.as_u32() as u128) << NODE_BIT_INDEX
+    }
+
+    fn encode_for_enum_min(name: AttributeName, value: StringId, ) -> u128 {
+        (name.as_u32() as u128) << NAME_BIT_INDEX |
+        (value.as_u32() as u128) << VALUE_BIT_INDEX
+    }
+
+    fn encode_for_enum_mac(name: AttributeName, value: StringId, ) -> u128 {
+        (name.as_u32() as u128) << NAME_BIT_INDEX |
+        ((value.as_u32() + 1) as u128) << VALUE_BIT_INDEX
+    }
+
+    fn decode(encoded: u128) -> Attribute {
+        Attribute {
+            node: ((((encoded & NODE_MASK) >> NODE_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+            name: ((((encoded & NAME_MASK) >> NAME_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+            value: StringId((((encoded & VALUE_MASK) >> VALUE_BIT_INDEX) & 0xFFFFFFFF) as u32),
+        }
+    }
+
+    fn decode_node(encoded: u128) -> NodeId {
+        ((((encoded & NODE_MASK) >> NODE_BIT_INDEX) & 0xFFFFFFF) as u32).into()
+    }
+
+    
+    pub struct NodesByAttributeTable {
         inner_table: Table<TREE_NODE_SIZE>
     } 
 
 
-    impl<'a> AttributesByNameTable {
+    impl<'a> NodesByAttributeTable {
 
         pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
-            AttributesByNameTable {
+            NodesByAttributeTable {
                 inner_table: table
             }
         }
 
-        pub fn get_view(&'a self) -> AttributesByNameTableView<'a> {
-            AttributesByNameTableView::new(self.inner_table.get_view())
+        pub fn get_view(&'a self) -> NodesByAttributeTableView<'a> {
+            NodesByAttributeTableView::new(self.inner_table.get_view())
         }
 
 
-        pub fn commit(&self, view: &'a AttributesByNameTableView) {
+        pub fn commit(&self, view: &'a NodesByAttributeTableView) {
             self.inner_table.commit(&view.inner_view);
         }
     }
 
 
-    pub struct AttributesByNameTableView<'a> {
+    pub struct NodesByAttributeTableView<'a> {
         inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
     }
 
     
-    impl<'a> AttributesByNameTableView<'a> {
+    impl<'a> NodesByAttributeTableView<'a> {
         pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
-            AttributesByNameTableView {
+            NodesByAttributeTableView {
                 inner_view: view
             }
         }
 
         pub fn put(&self, name: AttributeName, value: StringId, node: NodeId) {
-            self.inner_view.put(Self::encode(name, value, node));
+            self.inner_view.put(encode(name, value, node));
         }
 
 
-        // pub fn iter_nodes_with_attribute(&self, name: AttributeName, value: StringId) -> AttrByNameValueIterator<'a> {
-        //     unimplemented!();
-        // }
-        
-
-        fn encode(name: AttributeName, value: StringId, node: NodeId) -> u128 {
-            (name.0.0 as u128) << NAME_BIT_INDEX |
-            (value.0 as u128) << VALUE_BIT_INDEX |
-            (node.as_u32() as u128) << NODE_BIT_INDEX
-        }
-
-
-        fn decode(encoded: u128) -> Attribute {
-            Attribute {
-                node: (((encoded & NODE_MASK) >> NODE_BIT_INDEX) as u32).into(),
-                name: (((encoded & NAME_MASK) >> NAME_BIT_INDEX) as u32).into(),
-                value: StringId(((encoded & VALUE_MASK) >> VALUE_BIT_INDEX) as u32),
-            }
+        pub fn iter_nodes(&'a self, name: AttributeName, value: StringId) -> NodeByAttributeIterator<'a> {
+            NodeByAttributeIterator::new(&self.inner_view, name, value)   
         }
     }
 
 
-    pub struct AttributeByNameValueIterator<'a> {
-        based_on_view: &'a GraphView<'a>,
+    pub struct NodeByAttributeIterator<'a> {
+        inner_iter: TableIterator<'a, TREE_NODE_SIZE>
     }
 
 
-    impl<'a> Iterator for AttributeByNameValueIterator<'a> {
+    impl <'a> NodeByAttributeIterator<'a> {
+        pub fn new(based_on_view: &'a crate::pslist::TableView<TREE_NODE_SIZE>, name: AttributeName, value: StringId) -> Self {
+            let inner_iter = based_on_view.iter(
+                encode_for_enum_min(name, value), encode_for_enum_mac(name, value));
+            NodeByAttributeIterator { inner_iter }
+        }
+    }
 
-        type Item = Attribute;
+
+    impl<'a> Iterator for NodeByAttributeIterator<'a> {
+
+        type Item = NodeId;
 
         fn next(&mut self) -> Option<Self::Item> {
-            unimplemented!();
+            let x= self.inner_iter.next(); 
+            match x {
+                Some(encoded) => Some(decode_node(encoded)),
+                None => None
+            }
         }   
     }
-
-    
 }
-

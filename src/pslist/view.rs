@@ -121,8 +121,8 @@ pub struct TableIterator<'a, const K: usize> {
     root_hnode: NodeHandle<K>,
     min: u128,
     mac: u128,
-    current_hnode: Option<NodeHandle<K>>,
-    current_index: usize
+    hnode: Option<NodeHandle<K>>,
+    index: usize
 }
 
 
@@ -134,8 +134,8 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
             root_hnode: root_node.clone(), 
             min: min, 
             mac: mac,
-            current_hnode: None,
-            current_index: 0  }
+            hnode: None,
+            index: 0  }
     }
 
 
@@ -145,13 +145,13 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut hnode = self.root_hnode.clone();
         loop {
             let hnode_cur = hnode.clone();
-            let node_read_lock = hnode_cur.read_lock();
-            if (node_read_lock.is_leaf()) {
+            let node = hnode_cur.read_lock();
+            if (node.is_leaf()) {
                 break;
             }
 
-            let child_index = node_read_lock.values.find_range_index(self.min);
-            hnode = self.based_on_view.get_immutable_child_hnode(&node_read_lock, child_index);
+            let child_index = node.values.find_range_index(self.min);
+            hnode = self.based_on_view.get_immutable_child_hnode(&node, child_index);
         }
 
         // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 
@@ -159,9 +159,9 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut go_to_next_leaf = false;
         let mut index = 0;
         {
-            let leaf_node_read_lock = hnode.read_lock();
-            index = leaf_node_read_lock.values.find_index(self.min);
-            if (index >= leaf_node_read_lock.values.len()) {
+            let leaf_node = hnode.read_lock();
+            index = leaf_node.values.find_index(self.min);
+            if (index >= leaf_node.values.len()) {
                 go_to_next_leaf = true;
             }
         }
@@ -174,15 +174,15 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         }
 
         // Now that we have the correct node and index, start enumerating
-        self.current_hnode = Option::Some(hnode.clone());
-        self.current_index = index;
+        self.hnode = Option::Some(hnode.clone());
+        self.index = index;
 
         // We could be enumerating an empty list
-        let node_read_lock = hnode.read_lock();
-        if index >= node_read_lock.values.len() {
+        let node = hnode.read_lock();
+        if index >= node.values.len() || node.values[index] >= self.mac {
             Option::None
         } else {
-            Option::Some(node_read_lock.values[index])
+            Option::Some(node.values[index])
         }
     }
 
@@ -190,14 +190,14 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
     fn find_next(&mut self) -> Option<u128> {
 
         // Advance to the next value in this node
-        let mut hnode = self.current_hnode.as_ref().unwrap().clone();
-        let mut index = self.current_index + 1;
+        let mut hnode = self.hnode.as_ref().unwrap().clone();
+        let mut index = self.index + 1;
 
         // Advance to the next leaf node if necessary
         let mut go_to_next_leaf = false;
         {
-            let node_read_lock = hnode.read_lock();
-            if index >= node_read_lock.values.len() {
+            let node = hnode.read_lock();
+            if index >= node.values.len() {
                 go_to_next_leaf = true;
             }
         }
@@ -209,14 +209,14 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
             index = 0;
         }
 
-        self.current_hnode = Some(hnode.clone());
-        self.current_index = index;
+        self.hnode = Some(hnode.clone());
+        self.index = index;
 
-        let node_read_lock = hnode.read_lock();
-        if self.current_index >= node_read_lock.values.len() {
+        let node = hnode.read_lock();
+        if self.index >= node.values.len() || node.values[self.index] >= self.mac {
             Option::None
         } else {
-            Option::Some(node_read_lock.values[self.current_index])
+            Option::Some(node.values[self.index])
         }
     }
 }
@@ -228,7 +228,7 @@ impl<'a, const K: usize> Iterator for TableIterator<'a, K> {
 
     fn next(&mut self) -> Option<Self::Item> {
 
-         match &self.current_hnode {
+         match &self.hnode {
             None => self.find_first(),
             Some(node) => self.find_next()
         }

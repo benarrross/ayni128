@@ -7,7 +7,7 @@ use crate::BlobStore;
 use crate::Table;
 use crate::blobstore::*;
 use crate::graph::attribute::by_node::*;
-use crate::graph::attribute::by_name::*;
+use crate::graph::attribute::by_attr::*;
 use crate::graph::edge::edge_from::*;
 use crate::graph::edge::edge_to::*;
 use crate::graph::strings::StringTable;
@@ -26,7 +26,7 @@ pub struct Graph {
     edges_from: EdgesFromTable,
     edges_to: EdgesToTable,
     attributes_by_node: AttributesByNodeTable,
-    attributes_by_name: AttributesByNameTable,
+    attributes_by_name: NodesByAttributeTable,
     // NYI bloom filters table
     next_node_id: AtomicU32
 }
@@ -49,7 +49,7 @@ impl Graph {
             edges_from: EdgesFromTable::new(Table::new(blob_store.clone())),
             edges_to: EdgesToTable::new(Table::new(blob_store.clone())),
             attributes_by_node: AttributesByNodeTable::new(Table::new(blob_store.clone())),
-            attributes_by_name: AttributesByNameTable::new(Table::new(blob_store.clone())),
+            attributes_by_name: NodesByAttributeTable::new(Table::new(blob_store.clone())),
             next_node_id: AtomicU32::new(1),
         }
     }
@@ -76,7 +76,7 @@ impl Graph {
     pub fn commit<'a>(&self, view: &GraphView<'a>) {
         
         self.nodes.commit(&view.nodes);
-        self.attributes_by_name.commit(&view.attributes_by_name);
+        self.attributes_by_name.commit(&view.nodes_by_attribute);
         self.attributes_by_node.commit(&view.attributes_by_node);
         self.edges_from.commit(&view.edges_from);
         self.edges_to.commit(&view.edges_to);
