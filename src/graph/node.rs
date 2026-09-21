@@ -2,7 +2,7 @@ use crate::Table;
 use super::graph::*;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct NodeId (u32);
 
 impl NodeId {

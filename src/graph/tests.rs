@@ -67,25 +67,42 @@ fn enumerate_several_nodes_by_attribute() {
 
     let a1 : AttributeName = view.get_stringid(b"a1").into();
     let a2 : AttributeName = view.get_stringid(b"a2").into();
-    let v1 = view.get_stringid(b"value1");
-    let v2 = view.get_stringid(b"value2");
-    let v3 = view.get_stringid(b"value3");
+    let value1 = view.get_stringid(b"value1");
+    let value2 = view.get_stringid(b"value2");
+    let value3 = view.get_stringid(b"value3");
 
-    let n1 = create_node(&view, &[(a1, v1), (a2, v2) ]);
-    let n2 = create_node(&view, &[(a1, v1), (a2, v3) ]);
-    let n3 = create_node(&view, &[(a1, v2), (a2, v3) ]);
-    let n4 = create_node(&view, &[(a1, v2), (a2, v2) ]);
-    let n5 = create_node(&view, &[(a1, v1), (a2, v2) ]);
+    let n1 = create_node(&view, &[(a1, value1), (a2, value2) ]);
+    let n2 = create_node(&view, &[(a1, value1), (a2, value3) ]);
+    let n3 = create_node(&view, &[(a1, value2), (a2, value3) ]);
+    let n4 = create_node(&view, &[(a1, value2), (a2, value2) ]);
+    let n5 = create_node(&view, &[(a1, value1), (a2, value2) ]);
 
-    let nodes_a1v1: Vec<NodeId> = view.iter_nodes_with_attribute(a1.into(), v1).collect();
-    assert_eq!(3, nodes_a1v1.len());
-    assert_eq!(n1, nodes_a1v1[0]);
-    assert_eq!(n2, nodes_a1v1[1]);
-    assert_eq!(n5, nodes_a1v1[2]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value1).collect::<Vec<NodeId>>(), &[n1, n2, n5]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value2).collect::<Vec<NodeId>>(), &[n3, n4]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value2).collect::<Vec<NodeId>>(), &[n1, n4, n5]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value3).collect::<Vec<NodeId>>(), &[n2, n3]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value3).collect::<Vec<NodeId>>(), &[]);
+    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value1).collect::<Vec<NodeId>>(), &[]);
     
     graph.commit(&view);
 }
 
+
+fn assert_nodes_match(actual: &[NodeId], expected: &[NodeId]) {
+    
+    assert_eq!(actual.len(), expected.len());
+
+    let mut actual_vec : Vec<NodeId> = actual.iter().map(|&n| { n }).collect();
+    actual_vec.sort();
+    for node in expected {
+        if let Ok(index) = actual_vec.binary_search(node) {
+            actual_vec.remove(index);            
+        }
+        else {
+            assert!(false);
+        }
+    }
+}
 
 fn create_node(view: &GraphView, attributes: &[(AttributeName, StringId)]) -> NodeId {
     let node = view.create_node();
