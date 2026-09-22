@@ -100,6 +100,7 @@ impl <'a> GraphView<'a> {
 
 
     pub fn insert_edge(&self, from: NodeId, to: NodeId, name: EdgeName, edge_type: EdgeType, order: EdgeOrder ) {
+        self.edges_from.insert(from, edge_type, name, to, order);
         unimplemented!();
     }
 

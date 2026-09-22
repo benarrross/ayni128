@@ -42,8 +42,7 @@ impl<'a, const K: usize> TableView<'a, K> {
             let value_in_node = node.values.find(value, u128::MAX);
             if (value_in_node < u128::MAX) {
                 value_in_node
-            }
-            else {
+            } else {
                 match self.get_next_leaf_from_node(node) {
                     Some(hnode_next) => hnode_next.read_lock().values[0],
                     None => u128::MAX
