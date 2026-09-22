@@ -109,7 +109,7 @@ fn encode_for_enum_mac(from: NodeId, edge_type: Option<EdgeType>, name: Option<E
 
 fn encode_for_get_by_type(from: NodeId, edge_type: EdgeType) -> u128 {
     (from.as_u32() as u128) << FROM_MASK |
-    (edge_type as u32 as u128) << TYPE_BIT_INDEX |
+    (edge_type as u32 as u128) << TYPE_BIT_INDEX
 }
 
 
@@ -181,7 +181,7 @@ impl<'a> EdgesFromView<'a> {
         }
     }
 
-    
+
     pub fn get_by_type(&self, from: NodeId, edge_type: EdgeType) -> Option<Edge> {
         let found = decode(self.inner_view.get(encode_for_get_by_type(from, edge_type)));
         if (found.from == from && found.edge_type == edge_type) {
