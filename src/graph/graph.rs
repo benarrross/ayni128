@@ -89,18 +89,3 @@ impl Graph {
         NodeId::new(self.next_node_id.fetch_add(1, Ordering::Relaxed))
     }
 }
-
-
-
-// pub struct Graph {
-//     strings: Arc<Mutex<StringTable>>,
-//     blobs: Arc<Mutex<BlobStore>>,
-//     nodes: NodesTable,
-//     edges_from: EdgesFromTable,
-//     edges_to: EdgesToTable,
-//     attributes_by_node: AttributesByNodeTable,
-//     attributes_by_name: AttributesByNameTable,
-//     // NYI bloom filters table
-//     next_node_id: AtomicU32
-// }
-

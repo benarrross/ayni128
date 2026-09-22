@@ -116,7 +116,9 @@ fn create_node(view: &GraphView, attributes: &[(AttributeName, StringId)]) -> No
 fn create_node_str(view: &GraphView, attributes: &[(&[u8], &[u8])]) -> NodeId {
     let node = view.insert_node();
     for attribute in attributes {
-        view.insert_attribute_str(node, attribute.0, attribute.1);
+        let name : AttributeName = view.insert_string(attribute.0).into();
+        let value = view.insert_string(attribute.1);
+        view.insert_attribute(node, name, value);
     }
     node
 }
