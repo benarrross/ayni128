@@ -67,7 +67,7 @@ impl<'a> NodesView<'a> {
     }
 
     pub fn put(&self, node: &NodeId) {
-        self.inner_view.put(Self::encode(&node));
+        self.inner_view.insert(Self::encode(&node));
     }
 
     

@@ -65,16 +65,16 @@ impl <'a> GraphView<'a> {
 
 
     pub fn insert_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
-        self.attributes_by_node.put(node, name, value);
-        self.nodes_by_attribute.put(name, value, node);
+        self.attributes_by_node.insert(node, name, value);
+        self.nodes_by_attribute.insert(name, value, node);
     }
 
 
     pub fn insert_attribute_str(&self, node: NodeId, name: &[u8], value: &[u8]) {
         let name_id : AttributeName = self.insert_string(name).into();
         let value_id : StringId = self.insert_string(value);
-        self.attributes_by_node.put(node, name_id, value_id);
-        self.nodes_by_attribute.put(name_id, value_id, node);
+        self.attributes_by_node.insert(node, name_id, value_id);
+        self.nodes_by_attribute.insert(name_id, value_id, node);
     }
 
 

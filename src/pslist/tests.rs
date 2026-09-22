@@ -46,7 +46,7 @@ fn insert_one() {
 
     // Insert 99 in a view (but don't commit it yet)
     let view = list.get_view();
-    view.put(99);
+    view.insert(99);
     for item in view.iter(0, u128::MAX) {
         assert_eq!(99, item);
     }
@@ -77,7 +77,7 @@ fn insert_several() {
 
     let view = list.get_view();
     for expected_value in &expected_values {
-        view.put(*expected_value);
+        view.insert(*expected_value);
     }
 
     assert_expected_values(&expected_values, &view);
@@ -120,7 +120,7 @@ fn insert_many_in_order() {
     // Insert enough nodes that we need to do three splits
     let view_v1 = list.get_view();
     for value in &expected_values {
-        view_v1.put(*value as u128);
+        view_v1.insert(*value as u128);
         inserted_count += 1;
 
         let mut iter = view_v1.iter(0, u128::MAX);
@@ -156,7 +156,7 @@ fn insert_many_out_of_order() {
 
     let view_v1 = list.get_view();
     for value in &expected_values {
-        view_v1.put(*value as u128);
+        view_v1.insert(*value as u128);
         assert_eq!(*value, view_v1.get(*value));
         assert!(view_v1.get(*value - 1) == *value - 1 || view_v1.get(*value - 1) == *value);
     }

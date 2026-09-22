@@ -66,7 +66,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
 
     /// Inserts a value into the B+tree.
-    pub fn put(&self, value: u128) {
+    pub fn insert(&self, value: u128) {
 
         self.check();
 

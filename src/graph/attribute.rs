@@ -104,8 +104,8 @@ pub mod by_node {
             }
         }
 
-        pub fn put(&self, node: NodeId, name: AttributeName, value: StringId) {
-            self.inner_view.put(encode(node, name, value));
+        pub fn insert(&self, node: NodeId, name: AttributeName, value: StringId) {
+            self.inner_view.insert(encode(node, name, value));
         }
 
 
@@ -228,8 +228,8 @@ pub mod by_attr {
             }
         }
 
-        pub fn put(&self, name: AttributeName, value: StringId, node: NodeId) {
-            self.inner_view.put(encode(name, value, node));
+        pub fn insert(&self, name: AttributeName, value: StringId, node: NodeId) {
+            self.inner_view.insert(encode(name, value, node));
         }
 
 
