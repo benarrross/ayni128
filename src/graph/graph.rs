@@ -9,7 +9,6 @@ use crate::blobstore::*;
 use crate::graph::attribute::by_node::*;
 use crate::graph::attribute::by_attr::*;
 use crate::graph::edge::edge_from::*;
-use crate::graph::edge::edge_to::*;
 use crate::graph::strings::StringTable;
 use super::view::*;
 use super::node::*;
@@ -23,8 +22,8 @@ pub struct Graph {
     strings: Arc<Mutex<StringTable>>,
     blobs: Arc<Mutex<BlobStore>>,
     nodes: NodesTable,
-    edges_from: EdgesFromTable,
-    edges_to: EdgesToTable,
+    edges_from: EdgesTable,
+    edges_to: EdgesTable,
     attributes_by_node: AttributesByNodeTable,
     attributes_by_name: NodesByAttributeTable,
     // NYI bloom filters table
@@ -46,8 +45,8 @@ impl Graph {
             strings: Arc::new(Mutex::new(strings)),
             blobs: blob_store.clone(),
             nodes: NodesTable::new(Table::new(blob_store.clone())),
-            edges_from: EdgesFromTable::new(Table::new(blob_store.clone())),
-            edges_to: EdgesToTable::new(Table::new(blob_store.clone())),
+            edges_from: EdgesTable::new(Table::new(blob_store.clone())),
+            edges_to: EdgesTable::new(Table::new(blob_store.clone())),
             attributes_by_node: AttributesByNodeTable::new(Table::new(blob_store.clone())),
             attributes_by_name: NodesByAttributeTable::new(Table::new(blob_store.clone())),
             next_node_id: AtomicU32::new(1),

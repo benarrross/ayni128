@@ -7,7 +7,7 @@ use super::attribute;
 use super::node;
 use super::node::*;
 use super::attribute::{*, by_node::*, by_attr::*};
-use super::edge::{*, edge_from::*, edge_to::*};
+use super::edge::{*, edge_from::*};
 use super::node::*;
 use super::strings::*;
 
@@ -17,7 +17,7 @@ pub struct GraphView<'a> {
     pub(crate) strings: Arc<Mutex<StringTable>>,
     pub(crate) nodes: NodesView<'a>,
     pub(crate) edges_from: EdgesFromView<'a>,
-    pub(crate) edges_to: EdgesToView<'a>,
+    pub(crate) edges_to: EdgesFromView<'a>,
     pub(crate) attributes_by_node: AttributesByNodeTableView<'a>,
     pub(crate) nodes_by_attribute: NodesByAttributeTableView<'a>,
 }
@@ -29,8 +29,8 @@ impl <'a> GraphView<'a> {
         based_on: &'a Graph,
         strings: Arc<Mutex<StringTable>>,
         nodes_table: &'a NodesTable,
-        edges_from_table: &'a EdgesFromTable,
-        edges_to_table: &'a EdgesToTable,
+        edges_from_table: &'a EdgesTable,
+        edges_to_table: &'a EdgesTable,
         attributes_by_node_table: &'a AttributesByNodeTable,
         attributes_by_name_table: &'a NodesByAttributeTable) -> Self {
         
@@ -101,21 +101,21 @@ impl <'a> GraphView<'a> {
 
     pub fn insert_edge(&self, from: NodeId, to: NodeId, name: EdgeName, edge_type: EdgeType, order: EdgeOrder ) {
         self.edges_from.insert(from, edge_type, name, to, order);
+        self.edges_to.insert(to, edge_type, name, from, order);
+    }
+
+
+    pub fn get_edge(&self, node: NodeId, name: EdgeName) -> Option<Edge> {
         unimplemented!();
     }
 
 
-    pub fn get_edge(&self, node:NodeId, name: EdgeName) -> Option<Edge> {
+    pub fn iter_edges_from(&self, node: NodeId, name: EdgeName) -> EdgeIterator<'a> {
         unimplemented!();
     }
 
 
-    pub fn iter_edges_from(&self, node: NodeId, name: EdgeName) -> EdgeFromIterator<'a> {
-        unimplemented!();
-    }
-
-
-    pub fn iter_edges_to(&self, node: NodeId, name: EdgeName) -> EdgeToIterator<'a> {
+    pub fn iter_edges_to(&self, node: NodeId, name: EdgeName) -> EdgeIterator<'a> {
         unimplemented!();
     }
 }

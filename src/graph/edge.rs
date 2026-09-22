@@ -113,15 +113,15 @@ pub mod edge_from {
     }
 
 
-    pub struct EdgesFromTable {
+    pub struct EdgesTable {
         inner_table: Table<TREE_NODE_SIZE>
     } 
 
 
-    impl<'a> EdgesFromTable {
+    impl<'a> EdgesTable {
 
         pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
-            EdgesFromTable {
+            EdgesTable {
                 inner_table: table
             }
         }
@@ -164,80 +164,18 @@ pub mod edge_from {
         }
 
 
-        pub fn iter_attributes(&'a self, node: NodeId) -> EdgeFromIterator<'a> {
+        pub fn iter_attributes(&'a self, node: NodeId) -> EdgeIterator<'a> {
             unimplemented!();
         }
     }
 
 
-    pub struct EdgeFromIterator<'a> {
+    pub struct EdgeIterator<'a> {
         based_on_view: &'a GraphView<'a>,
     }
 
 
-    impl<'a> Iterator for EdgeFromIterator<'a> {
-
-        type Item = Edge;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            unimplemented!();
-        }   
-    }
-}
-
-
-pub mod edge_to {
-
-    use crate::Table;
-    use crate::graph::graph::*;
-    use crate::graph::view::*;
-    use super::*;
-
-
-    pub struct EdgesToTable {
-        inner_table: Table<TREE_NODE_SIZE>
-    } 
-
-
-    impl<'a> EdgesToTable {
-
-        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
-            EdgesToTable {
-                inner_table: table
-            }
-        }
-
-        pub fn get_view(&'a self) -> EdgesToView<'a> {
-            EdgesToView::new(self.inner_table.get_view())
-        }
-
-
-        pub fn commit(&self, view: &'a EdgesToView) {
-            self.inner_table.commit(&view.inner_view);
-        }
-    }
-    
-
-    pub struct EdgesToView<'a> {
-        inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
-    }
-
-
-    impl<'a> EdgesToView<'a> {
-        pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
-            EdgesToView {
-                inner_view: view
-            }
-        }
-    }
-
-
-    pub struct EdgeToIterator<'a> {
-        based_on_view: &'a GraphView<'a>,
-    }
-
-
-    impl<'a> Iterator for EdgeToIterator<'a> {
+    impl<'a> Iterator for EdgeIterator<'a> {
 
         type Item = Edge;
 
