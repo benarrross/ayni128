@@ -107,7 +107,13 @@ fn encode_for_enum_mac(from: NodeId, edge_type: Option<EdgeType>, name: Option<E
 }
 
 
-fn encode_for_get(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
+fn encode_for_get_by_type(from: NodeId, edge_type: EdgeType) -> u128 {
+    (from.as_u32() as u128) << FROM_MASK |
+    (edge_type as u32 as u128) << TYPE_BIT_INDEX |
+}
+
+
+fn encode_for_get_by_name(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
     (from.as_u32() as u128) << FROM_MASK |
     (edge_type as u32 as u128) << TYPE_BIT_INDEX |
     (name.as_u32() as u128) << NAME_BIT_INDEX
@@ -166,17 +172,27 @@ impl<'a> EdgesFromView<'a> {
     }
 
 
-    pub fn get(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
-        let found = decode(self.inner_view.get(encode_for_get(from, edge_type, name)));
+    pub fn get_by_name(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
+        let found = decode(self.inner_view.get(encode_for_get_by_name(from, edge_type, name)));
         if (found.from == from && found.edge_type == edge_type && found.name == name) {
-        Some(found)
+            Some(found)
+        } else {
+            None
+        }
+    }
+
+    
+    pub fn get_by_type(&self, from: NodeId, edge_type: EdgeType) -> Option<Edge> {
+        let found = decode(self.inner_view.get(encode_for_get_by_type(from, edge_type)));
+        if (found.from == from && found.edge_type == edge_type) {
+            Some(found)
         } else {
             None
         }
     }
 
 
-    pub fn iter_attributes(&'a self, from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> EdgeIterator<'a> {
+    pub fn iter(&'a self, from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> EdgeIterator<'a> {
         let inner_iter = self.inner_view.iter(
             encode_for_enum_min(from, edge_type, name), encode_for_enum_mac(from, edge_type, name));
         EdgeIterator::new(inner_iter)

@@ -96,17 +96,27 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn get_edge(&self, node: NodeId, name: EdgeName) -> Option<Edge> {
-        unimplemented!();
+    pub fn get_edge_from(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
+        self.edges_from.get_by_name(from, edge_type, name)
     }
 
 
-    pub fn iter_edges_from(&self, node: NodeId, name: EdgeName) -> EdgeIterator<'a> {
-        unimplemented!();
+    pub fn get_edge_to(&self, to: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
+        self.edges_to.get_by_name(to, edge_type, name)
     }
 
 
-    pub fn iter_edges_to(&self, node: NodeId, name: EdgeName) -> EdgeIterator<'a> {
-        unimplemented!();
+    pub fn get_parent_edge(&self, to: NodeId) -> Option<Edge> {
+        self.edges_to.get_by_type(to, EdgeType::Child)
+    }
+
+
+    pub fn iter_edges_from(&'a self, from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> EdgeIterator<'a> {
+        self.edges_from.iter(from, edge_type, name)
+    }
+
+
+    pub fn iter_edges_to(&'a self, to: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> EdgeIterator<'a> {
+        self.edges_to.iter(to, edge_type, name)
     }
 }
