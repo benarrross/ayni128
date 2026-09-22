@@ -110,12 +110,16 @@ pub mod by_node {
         }
 
 
-        // NYI this should return an Option<Attribute>
-        pub fn get(&self, node: NodeId, name: AttributeName) -> Attribute {
-            let found_encoded = self.inner_view.get(encode_for_get(node, name));
-            decode(found_encoded)
+        pub fn get(&self, node: NodeId, name: AttributeName) -> Option<Attribute> {
+            let found = decode(self.inner_view.get(encode_for_get(node, name)));
+            if (found.node == node && found.name == name) {
+                Some(found)
+            } else {
+                None
+            }
         }
 
+        
         pub fn iter(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
             AttributeByNodeIterator::new(&self.inner_view, node)   
         }

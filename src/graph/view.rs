@@ -81,8 +81,7 @@ impl <'a> GraphView<'a> {
 
 
     pub fn get_attribute(&self, node: NodeId, name: AttributeName) -> Option<StringId> {
-        let attr = self.attributes_by_node.get(node, name);
-        if (attr.node == node && attr.name == name) {
+        if let Some(attr) = self.attributes_by_node.get(node, name) {
             Some(attr.value)
         } else {
             None
