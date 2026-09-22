@@ -116,7 +116,7 @@ pub mod by_node {
             decode(found_encoded)
         }
 
-        pub fn iter_attributes(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
+        pub fn iter(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
             AttributeByNodeIterator::new(&self.inner_view, node)   
         }
     }
@@ -236,7 +236,7 @@ pub mod by_attr {
         }
 
 
-        pub fn iter_nodes(&'a self, name: AttributeName, value: StringId) -> NodeByAttributeIterator<'a> {
+        pub fn iter(&'a self, name: AttributeName, value: StringId) -> NodeByAttributeIterator<'a> {
             NodeByAttributeIterator::new(&self.inner_view, name, value)   
         }
     }

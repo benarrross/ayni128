@@ -91,12 +91,12 @@ impl <'a> GraphView<'a> {
 
 
     pub fn iter_attributes(&'a self, node: NodeId) -> AttributeByNodeIterator<'a> {
-        self.attributes_by_node.iter_attributes(node)
+        self.attributes_by_node.iter(node)
     }
 
 
     pub fn iter_nodes_with_attribute(&'a self, name: AttributeName, value: StringId) -> NodeByAttributeIterator<'a> {
-        self.nodes_by_attribute.iter_nodes(name, value)
+        self.nodes_by_attribute.iter(name, value)
     }
 
 
