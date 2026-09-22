@@ -46,7 +46,7 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn get_stringid(&self, value: &[u8]) -> StringId {
+    pub fn insert_string(&self, value: &[u8]) -> StringId {
         let mut s = self.strings.lock().unwrap();
         s.map_to_id(value)
     }
@@ -57,22 +57,22 @@ impl <'a> GraphView<'a> {
         s.get(id)
     }
     
-    pub fn create_node(&self) -> NodeId {
+    pub fn insert_node(&self) -> NodeId {
         let node = self.based_on.get_next_node_id();
         self.nodes.put(&node);
         node
     }
 
 
-    pub fn set_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
+    pub fn insert_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
         self.attributes_by_node.put(node, name, value);
         self.nodes_by_attribute.put(name, value, node);
     }
 
 
-    pub fn set_attribute_str(&self, node: NodeId, name: &[u8], value: &[u8]) {
-        let name_id : AttributeName = self.get_stringid(name).into();
-        let value_id : StringId = self.get_stringid(value);
+    pub fn insert_attribute_str(&self, node: NodeId, name: &[u8], value: &[u8]) {
+        let name_id : AttributeName = self.insert_string(name).into();
+        let value_id : StringId = self.insert_string(value);
         self.attributes_by_node.put(node, name_id, value_id);
         self.nodes_by_attribute.put(name_id, value_id, node);
     }
@@ -103,7 +103,7 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn get_edge_from(&self, node:NodeId, name: EdgeName) -> Option<Edge> {
+    pub fn get_edge(&self, node:NodeId, name: EdgeName) -> Option<Edge> {
         unimplemented!();
     }
 

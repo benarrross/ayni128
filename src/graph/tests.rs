@@ -25,11 +25,11 @@ fn create_one_node_and_attribute() {
 
     let view = graph.get_view();
 
-    let attr_name : AttributeName = view.get_stringid(b"attr1").into();
-    let test_value = view.get_stringid(b"test_value");
+    let attr_name : AttributeName = view.insert_string(b"attr1").into();
+    let test_value = view.insert_string(b"test_value");
 
-    let n1 = view.create_node();
-    view.set_attribute(n1, attr_name, test_value);
+    let n1 = view.insert_node();
+    view.insert_attribute(n1, attr_name, test_value);
 
     assert_eq!(test_value, view.get_attribute(n1, attr_name).unwrap());
 }
@@ -65,11 +65,11 @@ fn enumerate_several_nodes_by_attribute() {
 
     let view = graph.get_view();
 
-    let a1 : AttributeName = view.get_stringid(b"a1").into();
-    let a2 : AttributeName = view.get_stringid(b"a2").into();
-    let value1 = view.get_stringid(b"value1");
-    let value2 = view.get_stringid(b"value2");
-    let value3 = view.get_stringid(b"value3");
+    let a1 : AttributeName = view.insert_string(b"a1").into();
+    let a2 : AttributeName = view.insert_string(b"a2").into();
+    let value1 = view.insert_string(b"value1");
+    let value2 = view.insert_string(b"value2");
+    let value3 = view.insert_string(b"value3");
 
     let n1 = create_node(&view, &[(a1, value1), (a2, value2) ]);
     let n2 = create_node(&view, &[(a1, value1), (a2, value3) ]);
@@ -104,18 +104,19 @@ fn assert_nodes_match(actual: &[NodeId], expected: &[NodeId]) {
     }
 }
 
+
 fn create_node(view: &GraphView, attributes: &[(AttributeName, StringId)]) -> NodeId {
-    let node = view.create_node();
+    let node = view.insert_node();
     for attribute in attributes {
-        view.set_attribute(node, attribute.0, attribute.1);
+        view.insert_attribute(node, attribute.0, attribute.1);
     }
     node
 }
 
 fn create_node_str(view: &GraphView, attributes: &[(&[u8], &[u8])]) -> NodeId {
-    let node = view.create_node();
+    let node = view.insert_node();
     for attribute in attributes {
-        view.set_attribute_str(node, attribute.0, attribute.1);
+        view.insert_attribute_str(node, attribute.0, attribute.1);
     }
     node
 }
