@@ -1,7 +1,9 @@
+use crate::Table;
 use super::graph::*;
 use super::node::NodeId;
 use super::strings::StringId;
 use super::view::*;
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,128 +61,120 @@ pub struct Edge {
 }
 
 
-pub mod edge_from {
+static FROM_BIT_INDEX : usize = 96;
+static TYPE_BIT_INDEX : usize = 64;
+static NAME_BIT_INDEX : usize = 63;
+static ORDER_BIT_INDEX: usize = 31;
+static TO_BIT_INDEX: usize = 0;
 
-    use crate::Table;
-    use crate::graph::graph::*;
-    use crate::graph::view::*;
-    use super::*;
-
-    static FROM_BIT_INDEX : usize = 96;
-    static TYPE_BIT_INDEX : usize = 64;
-    static NAME_BIT_INDEX : usize = 63;
-    static ORDER_BIT_INDEX: usize = 31;
-    static TO_BIT_INDEX: usize = 0;
-
-    static FROM_MASK : u128 = 0xFFFFFFFFu128 << FROM_BIT_INDEX;
-    static NAME_MASK : u128 = 0xFFFFFFFFu128 << NAME_BIT_INDEX;
-    static TYPE_MASK : u128 = 0x1u128 << TYPE_BIT_INDEX;
-    static ORDER_MASK : u128 = 0x7FFFFFFFu128 << ORDER_BIT_INDEX;
-    static TO_MASK : u128 = 0xFFFFFFFFu128 << TO_BIT_INDEX;
+static FROM_MASK : u128 = 0xFFFFFFFFu128 << FROM_BIT_INDEX;
+static NAME_MASK : u128 = 0xFFFFFFFFu128 << NAME_BIT_INDEX;
+static TYPE_MASK : u128 = 0x1u128 << TYPE_BIT_INDEX;
+static ORDER_MASK : u128 = 0x7FFFFFFFu128 << ORDER_BIT_INDEX;
+static TO_MASK : u128 = 0xFFFFFFFFu128 << TO_BIT_INDEX;
 
 
-    fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: EdgeOrder) -> u128 {
-        (from.as_u32() as u128) << FROM_MASK |
-        (edge_type as u32 as u128) << TYPE_BIT_INDEX |
-        (name.as_u32() as u128) << NAME_BIT_INDEX |
-        (order.as_u32() as u128) << ORDER_BIT_INDEX |
-        (to.as_u32() as u128) << TO_BIT_INDEX
+fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: EdgeOrder) -> u128 {
+    (from.as_u32() as u128) << FROM_MASK |
+    (edge_type as u32 as u128) << TYPE_BIT_INDEX |
+    (name.as_u32() as u128) << NAME_BIT_INDEX |
+    (order.as_u32() as u128) << ORDER_BIT_INDEX |
+    (to.as_u32() as u128) << TO_BIT_INDEX
+}
+
+// fn encode_for_enum_min(node: NodeId) -> u128 {
+//     (node.as_u32() as u128) << NODE_BIT_INDEX
+// }
+
+// fn encode_for_enum_mac(node: NodeId) -> u128 {
+//     ((node.as_u32() + 1) as u128) << NODE_BIT_INDEX
+// }
+
+fn encode_for_get(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
+    (from.as_u32() as u128) << FROM_MASK |
+    (edge_type as u32 as u128) << TYPE_BIT_INDEX |
+    (name.as_u32() as u128) << NAME_BIT_INDEX
+}
+
+
+fn decode(encoded: u128) -> Edge {
+    Edge {
+        from: ((((encoded & FROM_MASK) >> FROM_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+        edge_type: ((((encoded & TYPE_MASK) >> TYPE_BIT_INDEX) & 0x1) as u32).into(),
+        name: ((((encoded & NAME_MASK) >> NAME_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+        order: ((((encoded & ORDER_MASK) >> ORDER_BIT_INDEX) & 0x7FFFFFFF) as u32).into(),
+        to: ((((encoded & TO_MASK) >> TO_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
     }
-
-    // fn encode_for_enum_min(node: NodeId) -> u128 {
-    //     (node.as_u32() as u128) << NODE_BIT_INDEX
-    // }
-
-    // fn encode_for_enum_mac(node: NodeId) -> u128 {
-    //     ((node.as_u32() + 1) as u128) << NODE_BIT_INDEX
-    // }
-
-    fn encode_for_get(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
-        (from.as_u32() as u128) << FROM_MASK |
-        (edge_type as u32 as u128) << TYPE_BIT_INDEX |
-        (name.as_u32() as u128) << NAME_BIT_INDEX
-    }
+}
 
 
-    fn decode(encoded: u128) -> Edge {
-        Edge {
-            from: ((((encoded & FROM_MASK) >> FROM_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
-            edge_type: ((((encoded & TYPE_MASK) >> TYPE_BIT_INDEX) & 0x1) as u32).into(),
-            name: ((((encoded & NAME_MASK) >> NAME_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
-            order: ((((encoded & ORDER_MASK) >> ORDER_BIT_INDEX) & 0x7FFFFFFF) as u32).into(),
-            to: ((((encoded & TO_MASK) >> TO_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+pub struct EdgesTable {
+    inner_table: Table<TREE_NODE_SIZE>
+} 
+
+
+impl<'a> EdgesTable {
+
+    pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
+        EdgesTable {
+            inner_table: table
         }
     }
 
+    pub fn get_view(&'a self) -> EdgesFromView<'a> {
+        EdgesFromView::new(self.inner_table.get_view())
+    }
 
-    pub struct EdgesTable {
-        inner_table: Table<TREE_NODE_SIZE>
-    } 
+
+    pub fn commit(&self, view: &'a EdgesFromView) {
+        self.inner_table.commit(&view.inner_view);
+    }
+}
 
 
-    impl<'a> EdgesTable {
+pub struct EdgesFromView<'a> {
+    inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
+}
 
-        pub fn new(table: Table<TREE_NODE_SIZE>) -> Self {
-            EdgesTable {
-                inner_table: table
+
+impl<'a> EdgesFromView<'a> {
+    pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
+        EdgesFromView {
+            inner_view: view
+        }
+    }
+
+    pub fn insert(&self, from: NodeId, edge_type: EdgeType, name: EdgeName, to: NodeId, order: EdgeOrder) {
+        self.inner_view.insert(encode(from, name, edge_type, to, order));
+    }
+
+
+    pub fn get(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
+            let found = decode(self.inner_view.get(encode_for_get(from, edge_type, name)));
+            if (found.from == from && found.edge_type == edge_type && found.name == name) {
+            Some(found)
+            } else {
+                None
             }
-        }
-
-        pub fn get_view(&'a self) -> EdgesFromView<'a> {
-            EdgesFromView::new(self.inner_table.get_view())
-        }
-
-
-        pub fn commit(&self, view: &'a EdgesFromView) {
-            self.inner_table.commit(&view.inner_view);
-        }
-    }
-
-    
-    pub struct EdgesFromView<'a> {
-        inner_view: crate::pslist::TableView<'a, TREE_NODE_SIZE>
     }
 
 
-    impl<'a> EdgesFromView<'a> {
-        pub fn new(view: crate::pslist::TableView<'a, TREE_NODE_SIZE>) -> Self {
-            EdgesFromView {
-                inner_view: view
-            }
-        }
-
-        pub fn insert(&self, from: NodeId, edge_type: EdgeType, name: EdgeName, to: NodeId, order: EdgeOrder) {
-            self.inner_view.insert(encode(from, name, edge_type, to, order));
-        }
-
-
-        pub fn get(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
-             let found = decode(self.inner_view.get(encode_for_get(from, edge_type, name)));
-             if (found.from == from && found.edge_type == edge_type && found.name == name) {
-                Some(found)
-             } else {
-                 None
-             }
-        }
-
-
-        pub fn iter_attributes(&'a self, node: NodeId) -> EdgeIterator<'a> {
-            unimplemented!();
-        }
+    pub fn iter_attributes(&'a self, node: NodeId) -> EdgeIterator<'a> {
+        unimplemented!();
     }
+}
 
 
-    pub struct EdgeIterator<'a> {
-        based_on_view: &'a GraphView<'a>,
-    }
+pub struct EdgeIterator<'a> {
+    based_on_view: &'a GraphView<'a>,
+}
 
 
-    impl<'a> Iterator for EdgeIterator<'a> {
+impl<'a> Iterator for EdgeIterator<'a> {
 
-        type Item = Edge;
+    type Item = Edge;
 
-        fn next(&mut self) -> Option<Self::Item> {
-            unimplemented!();
-        }   
-    }
+    fn next(&mut self) -> Option<Self::Item> {
+        unimplemented!();
+    }   
 }

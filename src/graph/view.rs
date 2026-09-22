@@ -7,7 +7,7 @@ use super::attribute;
 use super::node;
 use super::node::*;
 use super::attribute::{*, by_node::*, by_attr::*};
-use super::edge::{*, edge_from::*};
+use super::edge::*;
 use super::node::*;
 use super::strings::*;
 

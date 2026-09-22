@@ -8,7 +8,7 @@ use crate::Table;
 use crate::blobstore::*;
 use crate::graph::attribute::by_node::*;
 use crate::graph::attribute::by_attr::*;
-use crate::graph::edge::edge_from::*;
+use crate::graph::edge::*;
 use crate::graph::strings::StringTable;
 use super::view::*;
 use super::node::*;
