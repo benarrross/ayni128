@@ -4,7 +4,7 @@ use super::node::*;
 use super::strings::StringId;
 
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AttributeName (StringId);
 
 impl AttributeName {
@@ -104,11 +104,13 @@ pub mod by_node {
             }
         }
 
+
         pub fn insert(&self, node: NodeId, name: AttributeName, value: StringId) {
             self.inner_view.insert(encode(node, name, value));
         }
 
 
+        // NYI this should return an Option<Attribute>
         pub fn get(&self, node: NodeId, name: AttributeName) -> Attribute {
             let found_encoded = self.inner_view.get(encode_for_get(node, name));
             decode(found_encoded)
@@ -132,6 +134,7 @@ pub mod by_node {
             AttributeByNodeIterator { inner_iter }
         }
     }
+
 
     impl<'a> Iterator for AttributeByNodeIterator<'a> {
 

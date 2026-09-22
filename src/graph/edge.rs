@@ -7,8 +7,19 @@ use super::view::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EdgeName (StringId);
 
+impl EdgeName {
+    pub(crate) fn as_u32(&self) -> u32 { 
+        self.0.as_u32()
+    }
+}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl From<EdgeName> for u32 { fn from(item: EdgeName) -> u32 { item.0.0 } }
+impl From<EdgeName> for StringId { fn from(item: EdgeName) -> StringId { item.0 } }
+impl From<StringId> for EdgeName { fn from(item: StringId) -> EdgeName { EdgeName(item) } }
+impl From<u32> for EdgeName { fn from(item: u32) -> EdgeName { EdgeName(StringId(item)) } }
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub struct EdgeOrder (u32);
 
 
@@ -21,11 +32,11 @@ pub enum EdgeType {
 
 
 pub struct Edge {
-    from: NodeId,
-    to: NodeId,
-    name: EdgeName,
-    edge_type: EdgeType,
-    order: EdgeOrder
+    pub from: NodeId,
+    pub to: NodeId,
+    pub name: EdgeName,
+    pub edge_type: EdgeType,
+    pub order: EdgeOrder
 }
 
 
@@ -71,6 +82,24 @@ pub mod edge_from {
             EdgesFromView {
                 inner_view: view
             }
+        }
+
+        pub fn insert(&self, from: NodeId, edge_type: EdgeType, name: EdgeName, to: NodeId, order: EdgeOrder) {
+            unimplemented!();
+            //self.inner_view.insert(encode(node, name, value));
+        }
+
+
+        pub fn get(&self, node: NodeId, name: EdgeName) -> Option<Edge> {
+            unimplemented!();
+        //     let found_encoded = self.inner_view.get(encode_for_get(node, name));
+        //     decode(found_encoded)
+        }
+
+
+        pub fn iter_attributes(&'a self, node: NodeId) -> EdgeFromIterator<'a> {
+            unimplemented!();
+//            AttributeByNodeIterator::new(&self.inner_view, node)   
         }
     }
 
