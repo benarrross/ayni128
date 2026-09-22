@@ -65,12 +65,14 @@ impl <'a> GraphView<'a> {
 
 
     pub fn insert_attribute(&self, node: NodeId, name: AttributeName, value: StringId) {
+        // BUG BUG NYI need to delete any other attribute values with the same name
         self.attributes_by_node.insert(node, name, value);
         self.nodes_by_attribute.insert(name, value, node);
     }
 
 
     pub fn insert_attribute_str(&self, node: NodeId, name: &[u8], value: &[u8]) {
+        // BUG BUG NYI need to delete any other attribute values with the same name
         let name_id : AttributeName = self.insert_string(name).into();
         let value_id : StringId = self.insert_string(value);
         self.attributes_by_node.insert(node, name_id, value_id);
