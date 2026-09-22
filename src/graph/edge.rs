@@ -1,4 +1,5 @@
 use crate::Table;
+use crate::pslist::*;
 use super::graph::*;
 use super::node::NodeId;
 use super::strings::StringId;
@@ -40,14 +41,9 @@ pub enum EdgeType {
     Reference = 1,
 }
 
-//impl From<EdgeType> for u32 { fn from(item: EdgeType) -> u32 { item.0.0 } }
 impl From<u32> for EdgeType { 
     fn from(item: u32) -> EdgeType {
-        if (item == 0) {
-            EdgeType::Child 
-        } else  {
-            EdgeType::Reference 
-        } 
+        unsafe { std::mem::transmute(item) }
     }
 }
 
@@ -82,13 +78,34 @@ fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: 
     (to.as_u32() as u128) << TO_BIT_INDEX
 }
 
-// fn encode_for_enum_min(node: NodeId) -> u128 {
-//     (node.as_u32() as u128) << NODE_BIT_INDEX
-// }
 
-// fn encode_for_enum_mac(node: NodeId) -> u128 {
-//     ((node.as_u32() + 1) as u128) << NODE_BIT_INDEX
-// }
+fn encode_for_enum_min(from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> u128 {
+    if (edge_type.is_some() && name.is_some()) {
+        (from.as_u32() as u128) << FROM_MASK |
+        (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX |
+        (name.unwrap().as_u32() as u128) << NAME_BIT_INDEX
+    } else if (edge_type.is_some()) {
+        (from.as_u32() as u128) << FROM_MASK |
+        (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX
+    } else {
+        (from.as_u32() as u128) << FROM_MASK 
+    }
+}
+
+
+fn encode_for_enum_mac(from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> u128 {
+    if (edge_type.is_some() && name.is_some()) {
+        (from.as_u32() as u128) << FROM_MASK |
+        (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX |
+        ((name.unwrap().as_u32() + 1) as u128) << NAME_BIT_INDEX
+    } else if (edge_type.is_some()) {
+        (from.as_u32() as u128) << FROM_MASK |
+        ((edge_type.unwrap() as u32 + 1) as u128) << TYPE_BIT_INDEX
+    } else {
+        ((from.as_u32() + 1) as u128) << FROM_MASK 
+    }
+}
+
 
 fn encode_for_get(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
     (from.as_u32() as u128) << FROM_MASK |
@@ -150,23 +167,32 @@ impl<'a> EdgesFromView<'a> {
 
 
     pub fn get(&self, from: NodeId, edge_type: EdgeType, name: EdgeName) -> Option<Edge> {
-            let found = decode(self.inner_view.get(encode_for_get(from, edge_type, name)));
-            if (found.from == from && found.edge_type == edge_type && found.name == name) {
-            Some(found)
-            } else {
-                None
-            }
+        let found = decode(self.inner_view.get(encode_for_get(from, edge_type, name)));
+        if (found.from == from && found.edge_type == edge_type && found.name == name) {
+        Some(found)
+        } else {
+            None
+        }
     }
 
 
-    pub fn iter_attributes(&'a self, node: NodeId) -> EdgeIterator<'a> {
-        unimplemented!();
+    pub fn iter_attributes(&'a self, from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> EdgeIterator<'a> {
+        let inner_iter = self.inner_view.iter(
+            encode_for_enum_min(from, edge_type, name), encode_for_enum_mac(from, edge_type, name));
+        EdgeIterator::new(inner_iter)
     }
 }
 
 
 pub struct EdgeIterator<'a> {
-    based_on_view: &'a GraphView<'a>,
+    inner_iter: TableIterator<'a, TREE_NODE_SIZE>
+}
+
+
+impl <'a> EdgeIterator<'a> {
+    pub fn new(inner_iter: TableIterator<'a, TREE_NODE_SIZE>) -> Self {
+        EdgeIterator { inner_iter }
+    }
 }
 
 
@@ -175,6 +201,10 @@ impl<'a> Iterator for EdgeIterator<'a> {
     type Item = Edge;
 
     fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!();
+        let x= self.inner_iter.next(); 
+        match x {
+            Some(encoded) => Some(decode(encoded)),
+            None => None
+        }
     }   
 }
