@@ -68,14 +68,14 @@ pub struct Edge {
 static FROM_BIT_INDEX : usize = 96;
 static TYPE_BIT_INDEX : usize = 64;
 static NAME_BIT_INDEX : usize = 63;
-static ORDER_BIT_INDEX: usize = 31;
+static ORDER_BIT_INDEX: usize = 32;
 static TO_BIT_INDEX: usize = 0;
 
 static FROM_MASK : u128 = 0xFFFFFFFFu128 << FROM_BIT_INDEX;
 static NAME_MASK : u128 = 0xFFFFFFFFu128 << NAME_BIT_INDEX;
 static TYPE_MASK : u128 = 0x1u128 << TYPE_BIT_INDEX;
 static ORDER_MASK : u128 = 0x7FFFFFFFu128 << ORDER_BIT_INDEX;
-static TO_MASK : u128 = 0xFFFFFFFFu128 << TO_BIT_INDEX;
+static TO_MASK : u128 = 0xFFFFFFFFu128;
 
 
 fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: EdgeOrder) -> u128 {
@@ -83,7 +83,7 @@ fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: 
     (edge_type as u32 as u128) << TYPE_BIT_INDEX |
     (name.as_u32() as u128) << NAME_BIT_INDEX |
     (order.as_u32() as u128) << ORDER_BIT_INDEX |
-    (to.as_u32() as u128) << TO_BIT_INDEX
+    (to.as_u32() as u128)
 }
 
 
@@ -134,7 +134,7 @@ fn decode(encoded: u128) -> Edge {
         edge_type: ((((encoded & TYPE_MASK) >> TYPE_BIT_INDEX) & 0x1) as u32).into(),
         name: ((((encoded & NAME_MASK) >> NAME_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
         order: ((((encoded & ORDER_MASK) >> ORDER_BIT_INDEX) & 0x7FFFFFFF) as u32).into(),
-        to: ((((encoded & TO_MASK) >> TO_BIT_INDEX) & 0xFFFFFFFF) as u32).into(),
+        to: ((encoded & 0xFFFFFFFF) as u32).into(),
     }
 }
 

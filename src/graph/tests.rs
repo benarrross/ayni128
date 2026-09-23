@@ -74,12 +74,12 @@ fn enumerate_several_nodes_by_attribute() {
     let n4 = create_node(&view, &[(a1, value2), (a2, value2) ]);
     let n5 = create_node(&view, &[(a1, value1), (a2, value2) ]);
 
-    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value1).collect::<Vec<NodeId>>(), &[n1, n2, n5]);
-    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value2).collect::<Vec<NodeId>>(), &[n3, n4]);
-    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value2).collect::<Vec<NodeId>>(), &[n1, n4, n5]);
-    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value3).collect::<Vec<NodeId>>(), &[n2, n3]);
-    assert_nodes_match(&view.iter_nodes_with_attribute(a1, value3).collect::<Vec<NodeId>>(), &[]);
-    assert_nodes_match(&view.iter_nodes_with_attribute(a2, value1).collect::<Vec<NodeId>>(), &[]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a1, value1).collect::<Vec<NodeId>>(), &[n1, n2, n5]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a1, value2).collect::<Vec<NodeId>>(), &[n3, n4]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a2, value2).collect::<Vec<NodeId>>(), &[n1, n4, n5]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a2, value3).collect::<Vec<NodeId>>(), &[n2, n3]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a1, value3).collect::<Vec<NodeId>>(), &[]);
+    assert_nodes_match_ignore_order(&view.iter_nodes_with_attribute(a2, value1).collect::<Vec<NodeId>>(), &[]);
     
     graph.commit(&view);
 }
@@ -104,11 +104,43 @@ fn create_one_edge() {
     assert_eq!(edge_name, edge12.name);
     assert_eq!(n2, edge12.to);
     assert_eq!(EdgeOrder::new(87), edge12.order);
+
+    let edge12_reverse = view.get_edge_to(n2, EdgeType::Child, edge_name).unwrap();
+    assert_eq!(n1, edge12.from);
+    assert_eq!(EdgeType::Child, edge12.edge_type);
+    assert_eq!(edge_name, edge12.name);
+    assert_eq!(n2, edge12.to);
+    assert_eq!(EdgeOrder::new(87), edge12.order);
+
 }
 
 
+#[test]
+fn enumerate_edges() {
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut graph = Graph::new(memory_buffer);
 
-fn assert_nodes_match(actual: &[NodeId], expected: &[NodeId]) {
+    let view = graph.get_view();
+
+    let edge_name : EdgeName = view.insert_string(b"e1").into();
+    
+    let n1 = view.insert_node();
+    let n2 = view.insert_node();
+    let n3 = view.insert_node();
+    let n4 = view.insert_node();
+    view.insert_edge(n1, n2, EdgeType::Child, edge_name, EdgeOrder::new(87));
+    view.insert_edge(n1, n3, EdgeType::Child, edge_name, EdgeOrder::new(2));
+    view.insert_edge(n1, n4, EdgeType::Child, edge_name, EdgeOrder::new(99));
+
+    let mut actual : Vec<NodeId> = 
+        view.iter_edges_from(n1, Some(EdgeType::Child), Some(edge_name)).
+        map(|edge| { edge.to }).
+        collect();
+    assert_eq!(vec!(n3, n2, n4), actual);
+}
+
+
+fn assert_nodes_match_ignore_order(actual: &[NodeId], expected: &[NodeId]) {
     
     assert_eq!(actual.len(), expected.len());
 
