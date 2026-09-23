@@ -9,7 +9,6 @@ use crate::graph::*;
 
 /* 
 TO DO
-- Commit a view
 - Poplulate a graph, commit it, reload it from storage
 - Create many nodes in several concurrent transactions
 - Should we disallow creating a child edge if the target node already has a parent? Or at least do that in a check mode?
@@ -168,6 +167,9 @@ fn enumerate_edges() {
     view.insert_edge(n1, n2, EdgeType::Child, edge_name, EdgeOrder::new(87));
     view.insert_edge(n1, n3, EdgeType::Child, edge_name, EdgeOrder::new(2));
     view.insert_edge(n1, n4, EdgeType::Child, edge_name, EdgeOrder::new(99));
+    
+    graph.commit(&view);
+    let view = graph.get_view();
 
     let mut actual : Vec<NodeId> = 
         view.iter_edges_from(n1, Some(EdgeType::Child), Some(edge_name)).
