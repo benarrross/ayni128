@@ -12,6 +12,7 @@ TO DO
 - Commit a view
 - Poplulate a graph, commit it, reload it from storage
 - Create many nodes in several concurrent transactions
+- Should we disallow creating a child edge if the target node already has a parent? Or at least do that in a check mode?
  */
 
 
@@ -86,7 +87,7 @@ fn enumerate_several_nodes_by_attribute() {
 
 
 #[test]
-fn create_one_edge() {
+fn create_one_child_edge() {
     let mut memory_buffer = Box::new(MemoryStream::new());
     let mut graph = Graph::new(memory_buffer);
 
@@ -108,6 +109,42 @@ fn create_one_edge() {
     let edge12_reverse = view.get_edge_to(n2, EdgeType::Child, edge_name).unwrap();
     assert_eq!(n1, edge12.from);
     assert_eq!(EdgeType::Child, edge12.edge_type);
+    assert_eq!(edge_name, edge12.name);
+    assert_eq!(n2, edge12.to);
+    assert_eq!(EdgeOrder::new(87), edge12.order);
+
+    let parent_edge = view.get_parent_edge(n2).unwrap();
+    assert_eq!(n1, edge12.from);
+    assert_eq!(EdgeType::Child, edge12.edge_type);
+    assert_eq!(edge_name, edge12.name);
+    assert_eq!(n2, edge12.to);
+    assert_eq!(EdgeOrder::new(87), edge12.order);
+}
+
+
+#[test]
+fn create_one_reference_edge() {
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut graph = Graph::new(memory_buffer);
+
+    let view = graph.get_view();
+
+    let edge_name : EdgeName = view.insert_string(b"e1").into();
+    
+    let n1 = view.insert_node();
+    let n2 = view.insert_node();
+    view.insert_edge(n1, n2, EdgeType::Reference, edge_name, EdgeOrder::new(87));
+
+    let edge12 = view.get_edge_from(n1, EdgeType::Reference, edge_name).unwrap();
+    assert_eq!(n1, edge12.from);
+    assert_eq!(EdgeType::Reference, edge12.edge_type);
+    assert_eq!(edge_name, edge12.name);
+    assert_eq!(n2, edge12.to);
+    assert_eq!(EdgeOrder::new(87), edge12.order);
+
+    let edge12_reverse = view.get_edge_to(n2, EdgeType::Reference, edge_name).unwrap();
+    assert_eq!(n1, edge12.from);
+    assert_eq!(EdgeType::Reference, edge12.edge_type);
     assert_eq!(edge_name, edge12.name);
     assert_eq!(n2, edge12.to);
     assert_eq!(EdgeOrder::new(87), edge12.order);

@@ -51,6 +51,7 @@ pub enum EdgeType {
 impl From<u32> for EdgeType { 
     fn from(item: u32) -> EdgeType {
         unsafe { std::mem::transmute(item) }
+        //if (item & 0x1) == 0x1 { EdgeType::Reference } else { EdgeType::Child } 
     }
 }
 
@@ -65,15 +66,15 @@ pub struct Edge {
 }
 
 
-static FROM_BIT_INDEX : usize = 96;
-static TYPE_BIT_INDEX : usize = 64;
-static NAME_BIT_INDEX : usize = 63;
-static ORDER_BIT_INDEX: usize = 32;
-static TO_BIT_INDEX: usize = 0;
+static FROM_BIT_INDEX : usize = 96; // 32 bits
+static TYPE_BIT_INDEX : usize = 95; // 1 bit
+static NAME_BIT_INDEX : usize = 63; // 32 bits
+static ORDER_BIT_INDEX: usize = 32; // 31 bits
+static TO_BIT_INDEX: usize = 0;     // 32 bits
 
 static FROM_MASK : u128 = 0xFFFFFFFFu128 << FROM_BIT_INDEX;
-static NAME_MASK : u128 = 0xFFFFFFFFu128 << NAME_BIT_INDEX;
 static TYPE_MASK : u128 = 0x1u128 << TYPE_BIT_INDEX;
+static NAME_MASK : u128 = 0xFFFFFFFFu128 << NAME_BIT_INDEX;
 static ORDER_MASK : u128 = 0x7FFFFFFFu128 << ORDER_BIT_INDEX;
 static TO_MASK : u128 = 0xFFFFFFFFu128;
 
