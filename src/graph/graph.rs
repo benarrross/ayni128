@@ -27,6 +27,7 @@ pub struct Graph {
     attributes_by_node: AttributesByNodeTable,
     attributes_by_name: NodesByAttributeTable,
     // NYI bloom filters table
+    // NYI index table
     next_node_id: AtomicU32
 }
 
@@ -54,7 +55,7 @@ impl Graph {
     }
 
 
-    pub fn open(mut backing_store: Box<dyn crate::blobstore::Stream>) -> Self {
+    pub fn new_from_stream(mut backing_store: Box<dyn crate::blobstore::Stream>) -> Self {
         unimplemented!();
     }
 
@@ -86,6 +87,7 @@ impl Graph {
 
 
     pub(crate) fn get_next_node_id(&self) -> NodeId {
+        // BUG BUG BUG this is broken if you use new_from_stream
         NodeId::new(self.next_node_id.fetch_add(1, Ordering::Relaxed))
     }
 }
