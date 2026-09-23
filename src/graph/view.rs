@@ -57,6 +57,7 @@ impl <'a> GraphView<'a> {
         s.get(id)
     }
     
+    
     pub fn insert_node(&self) -> NodeId {
         let node = self.based_on.get_next_node_id();
         self.nodes.put(&node);
@@ -90,7 +91,7 @@ impl <'a> GraphView<'a> {
     }
 
 
-    pub fn insert_edge(&self, from: NodeId, to: NodeId, name: EdgeName, edge_type: EdgeType, order: EdgeOrder ) {
+    pub fn insert_edge(&self, from: NodeId, to: NodeId, edge_type: EdgeType, name: EdgeName, order: EdgeOrder ) {
         self.edges_from.insert(from, edge_type, name, to, order);
         self.edges_to.insert(to, edge_type, name, from, order);
     }

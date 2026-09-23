@@ -28,6 +28,7 @@ pub struct Graph {
     attributes_by_name: NodesByAttributeTable,
     // NYI bloom filters table
     // NYI index table
+    // NYI text ranges table
     next_node_id: AtomicU32
 }
 

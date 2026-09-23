@@ -26,10 +26,17 @@ impl From<u32> for EdgeName { fn from(item: u32) -> EdgeName { EdgeName(StringId
 pub struct EdgeOrder (u32);
 
 impl EdgeOrder {
+    pub fn new(value: u32) -> Self {
+        EdgeOrder { 0:value }
+    }
+
+
     pub(crate) fn as_u32(&self) -> u32 { 
         self.0
     }
 }
+
+
 impl From<EdgeOrder> for u32 { fn from(item: EdgeOrder) -> u32 { item.0 } }
 impl From<u32> for EdgeOrder { fn from(item: u32) -> EdgeOrder { EdgeOrder(item) } }
 
@@ -48,6 +55,7 @@ impl From<u32> for EdgeType {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Edge {
     pub from: NodeId,
     pub edge_type: EdgeType,
@@ -71,7 +79,7 @@ static TO_MASK : u128 = 0xFFFFFFFFu128 << TO_BIT_INDEX;
 
 
 fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: EdgeOrder) -> u128 {
-    (from.as_u32() as u128) << FROM_MASK |
+    (from.as_u32() as u128) << FROM_BIT_INDEX |
     (edge_type as u32 as u128) << TYPE_BIT_INDEX |
     (name.as_u32() as u128) << NAME_BIT_INDEX |
     (order.as_u32() as u128) << ORDER_BIT_INDEX |
@@ -81,40 +89,40 @@ fn encode(from: NodeId, name: EdgeName, edge_type: EdgeType, to: NodeId, order: 
 
 fn encode_for_enum_min(from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> u128 {
     if (edge_type.is_some() && name.is_some()) {
-        (from.as_u32() as u128) << FROM_MASK |
+        (from.as_u32() as u128) << FROM_BIT_INDEX |
         (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX |
         (name.unwrap().as_u32() as u128) << NAME_BIT_INDEX
     } else if (edge_type.is_some()) {
-        (from.as_u32() as u128) << FROM_MASK |
+        (from.as_u32() as u128) << FROM_BIT_INDEX |
         (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX
     } else {
-        (from.as_u32() as u128) << FROM_MASK 
+        (from.as_u32() as u128) << FROM_BIT_INDEX 
     }
 }
 
 
 fn encode_for_enum_mac(from: NodeId, edge_type: Option<EdgeType>, name: Option<EdgeName>) -> u128 {
     if (edge_type.is_some() && name.is_some()) {
-        (from.as_u32() as u128) << FROM_MASK |
+        (from.as_u32() as u128) << FROM_BIT_INDEX |
         (edge_type.unwrap() as u32 as u128) << TYPE_BIT_INDEX |
         ((name.unwrap().as_u32() + 1) as u128) << NAME_BIT_INDEX
     } else if (edge_type.is_some()) {
-        (from.as_u32() as u128) << FROM_MASK |
+        (from.as_u32() as u128) << FROM_BIT_INDEX |
         ((edge_type.unwrap() as u32 + 1) as u128) << TYPE_BIT_INDEX
     } else {
-        ((from.as_u32() + 1) as u128) << FROM_MASK 
+        ((from.as_u32() + 1) as u128) << FROM_BIT_INDEX 
     }
 }
 
 
 fn encode_for_get_by_type(from: NodeId, edge_type: EdgeType) -> u128 {
-    (from.as_u32() as u128) << FROM_MASK |
+    (from.as_u32() as u128) << FROM_BIT_INDEX |
     (edge_type as u32 as u128) << TYPE_BIT_INDEX
 }
 
 
 fn encode_for_get_by_name(from: NodeId, edge_type: EdgeType, name: EdgeName) -> u128 {
-    (from.as_u32() as u128) << FROM_MASK |
+    (from.as_u32() as u128) << FROM_BIT_INDEX |
     (edge_type as u32 as u128) << TYPE_BIT_INDEX |
     (name.as_u32() as u128) << NAME_BIT_INDEX
 }

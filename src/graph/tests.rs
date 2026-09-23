@@ -5,12 +5,9 @@ use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use crate::blobstore::*;
 use crate::graph::*;
-//use crate::graph::strings::StringId;
 
 /* 
 TO DO
-- Add several nodes with attributes
-- Find nodes by attribute
 - Commit a view
 - Add edges between nodes
 - Enumerate edges to and from a node
@@ -88,6 +85,29 @@ fn enumerate_several_nodes_by_attribute() {
 }
 
 
+#[test]
+fn create_one_edge() {
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut graph = Graph::new(memory_buffer);
+
+    let view = graph.get_view();
+
+    let edge_name : EdgeName = view.insert_string(b"e1").into();
+    
+    let n1 = view.insert_node();
+    let n2 = view.insert_node();
+    view.insert_edge(n1, n2, EdgeType::Child, edge_name, EdgeOrder::new(87));
+
+    let edge12 = view.get_edge_from(n1, EdgeType::Child, edge_name).unwrap();
+    assert_eq!(n1, edge12.from);
+    assert_eq!(EdgeType::Child, edge12.edge_type);
+    assert_eq!(edge_name, edge12.name);
+    assert_eq!(n2, edge12.to);
+    assert_eq!(EdgeOrder::new(87), edge12.order);
+}
+
+
+
 fn assert_nodes_match(actual: &[NodeId], expected: &[NodeId]) {
     
     assert_eq!(actual.len(), expected.len());
@@ -112,6 +132,7 @@ fn create_node(view: &GraphView, attributes: &[(AttributeName, StringId)]) -> No
     }
     node
 }
+
 
 fn create_node_str(view: &GraphView, attributes: &[(&[u8], &[u8])]) -> NodeId {
     let node = view.insert_node();
