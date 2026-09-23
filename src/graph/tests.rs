@@ -6,14 +6,14 @@ use std::sync::{Arc, Mutex};
 use crate::blobstore::*;
 use crate::graph::*;
 
+
 /* 
 TO DO
 - Commit a view
-- Add edges between nodes
-- Enumerate edges to and from a node
 - Poplulate a graph, commit it, reload it from storage
 - Create many nodes in several concurrent transactions
  */
+
 
 #[test]
 fn create_one_node_and_attribute() {
