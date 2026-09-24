@@ -11,7 +11,7 @@ use super::TableView;
 
 
 pub struct Table<const K: usize> {
-    root_node_link: Mutex<NodeLink<K>>,
+    root_node_link: Mutex<NodeLink<K>>, // NYI do we need this mutex, given that NodeLink has a RwLock inside it?
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>
 }
@@ -44,6 +44,7 @@ impl<'a, const K: usize> Table<K> {
 
 
     pub fn get_view(&'a self) -> TableView<'a, K> {
+        // NYI lock backing_store instead
         TableView::new(self, &*self.root_node_link.lock().unwrap())
     }
 
@@ -52,6 +53,7 @@ impl<'a, const K: usize> Table<K> {
 
         // Get a write lock on our root node that will persist through the whole commit.
         // This will ensure only one commit happens at a time.
+        // NYI get rid of the mutex on root_node_link, and lock backing_store instead
         let root_node_write_lock = &mut self.root_node_link.lock().unwrap();
 
         // Insert all new values into the committed b+tree
@@ -66,19 +68,21 @@ impl<'a, const K: usize> Table<K> {
                 },
                 SplitResult::NoSplit => {}
             };
-
-        // if let SplitResult::Split(right_hnode) = super::editor::insert_and_split(
-        //     &mut mutable_root_hnode.write_lock(), *value, self) {
-        //         *self.root_node_link.borrow_mut() = NodeLink::mutable(
-        //             create_branch_node(&mutable_root_hnode, right_hnode.clone()));
-        //     }
         }
 
         // Remove all deleted values from the committed b+tree
         // NYI
 
-        // Write the edited nodes to storage
-        // NYI
+        // Write the edited nodes to storage (if there are any)
+        let mut blob_store = self.backing_store.lock().unwrap();
+        if root_node_write_lock.is_mutable() {
+            let root_hnode = root_node_write_lock.get_mutable_hnode(&self);
+            let root_node = root_hnode.write_lock();
+            let root_blobid = root_node.store(&mut blob_store);
+
+            // Rewrite the root node link
+
+        }
 
     }
 

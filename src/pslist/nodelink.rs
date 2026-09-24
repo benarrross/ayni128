@@ -46,6 +46,7 @@ impl<const K: usize> NodeLink<K> {
             label: format!("empty")
         }
     }
+    
 
     pub(super) fn immutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
@@ -54,12 +55,14 @@ impl<const K: usize> NodeLink<K> {
         }
     }
 
+
     pub(super) fn mutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
             inner: RwLock::new(NodeLinkKind::Mutable(value.clone())),
             label: format!("mutable {}", &value.node_debug_id)
         }
     }
+
 
     pub(super) fn unloaded(value: BlobId) -> Self {
         NodeLink {
@@ -68,11 +71,19 @@ impl<const K: usize> NodeLink<K> {
         }
     }
 
+
     pub(super) fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
         matches!(*read_lock, NodeLinkKind::Empty )
     }
 
+
+    pub(super) fn is_mutable(&self) -> bool {
+        let read_lock = self.inner.read().unwrap();
+        matches!(*read_lock, NodeLinkKind::Mutable(_) )
+    }
+
+    
     /// Gets a node handle from a link, loading the node from storage if necessary.
     pub(super) fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 

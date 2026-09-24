@@ -61,10 +61,10 @@ fn insert_one() {
     }
 
     // Commit and ensure we can see 99
-    // list.commit(view);
-    // for item in list.get_view().iter(0, u128::MAX) {
-    //     assert_eq!(99, item);
-    // }
+    list.commit(&view);
+    for item in list.get_view().iter(0, u128::MAX) {
+        assert_eq!(99, item);
+    }
 }
 
 
@@ -169,6 +169,39 @@ fn insert_many_out_of_order() {
 }
 
 
+#[test]
+fn save_and_load() {
+    const K:usize = 4;
+    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut blobs = Arc::new(Mutex::new(BlobStore::new(memory_buffer)));
+    let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
+        1000, 1001, 1009, 1002, 46, 18, 19, 20, 21, 22, 23, 24, 25, 2, 9, 8, 7, 6, 5, 3, 800, 801, 799, 802, 798 ];
+    
+    // Write the list
+    {
+        let mut list = Table::<4>::new(blobs.clone());
+
+        let view = list.get_view();
+        for value in &expected_values {
+            view.insert(*value as u128);
+            assert_eq!(*value, view.get(*value));
+            assert!(view.get(*value - 1) == *value - 1 || view.get(*value - 1) == *value);
+        }
+        list.commit(&view);
+    }
+
+    // Reload the list from storage
+    {
+        let mut list = Table::<4>::new(blobs.clone());
+        let view = list.get_view();
+        let mut expected_values_sorted = expected_values.to_vec();
+        expected_values_sorted.sort();
+        assert_expected_values(&expected_values_sorted, &view);
+    }
+
+}
+
+
 fn assert_expected_values<'a, const K: usize>(expected: &[u128], actual: &TableView<'a, K>) {
 
     let mut expected_values_sorted = expected.to_vec();
@@ -180,6 +213,4 @@ fn assert_expected_values<'a, const K: usize>(expected: &[u128], actual: &TableV
         assert_eq!(*expected_value, actual_value);
     }
     assert!(actual_iter.next().is_none());
-
 }
-
