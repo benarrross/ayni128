@@ -13,7 +13,7 @@ enum NodeLinkKind<const K: usize> {
     Unloaded(BlobId),
 
     /// Link to a node that has not been modified in the current view
-    Immutable(NodeHandle<K>),
+    Loaded(NodeHandle<K>),
 
     /// Link to a node that has been modified in the current view
     Mutable(NodeHandle<K>)
@@ -40,7 +40,7 @@ impl<const K: usize> Clone for NodeLink<K> {
 /// Link to a node that may be loaded, or may still be on disk.
 impl<const K: usize> NodeLink<K> {
     
-    pub fn empty() -> Self {
+    pub fn new_empty() -> Self {
         NodeLink { 
             inner: RwLock::new(NodeLinkKind::Empty),
             label: format!("empty")
@@ -48,15 +48,15 @@ impl<const K: usize> NodeLink<K> {
     }
 
 
-    pub(super) fn immutable(value: &NodeHandle<K>) -> Self {
+    pub(super) fn new_loaded(value: &NodeHandle<K>) -> Self {
         NodeLink { 
-            inner: RwLock::new(NodeLinkKind::Immutable(value.clone())),
+            inner: RwLock::new(NodeLinkKind::Loaded(value.clone())),
             label: format!("immutable {}", &value.node_debug_id)
         }
     }
 
 
-    pub(super) fn mutable(value: &NodeHandle<K>) -> Self {
+    pub(super) fn new_mutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
             inner: RwLock::new(NodeLinkKind::Mutable(value.clone())),
             label: format!("mutable {}", &value.node_debug_id)
@@ -69,7 +69,7 @@ impl<const K: usize> NodeLink<K> {
     }
 
 
-    pub(super) fn unloaded(value: BlobId) -> Self {
+    pub(super) fn new_unloaded(value: BlobId) -> Self {
         NodeLink {
             inner: RwLock::new(NodeLinkKind::Unloaded(value)),
             label: format!("unloaded {}", value)
@@ -105,7 +105,7 @@ impl<const K: usize> NodeLink<K> {
                 new_inner = NodeLinkKind::Mutable(hnode.clone());
                 hnode
             },
-            NodeLinkKind::Immutable(hnode) => hnode.clone(),
+            NodeLinkKind::Loaded(hnode) => hnode.clone(),
             NodeLinkKind::Mutable(hnode) => hnode.clone(),
             NodeLinkKind::Empty => panic!("Can't get an empty node link")
         };
@@ -132,7 +132,7 @@ impl<const K: usize> NodeLink<K> {
                 new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
                 mutable_hnode
             },
-            NodeLinkKind::Immutable(hnode) => {
+            NodeLinkKind::Loaded(hnode) => {
                 let mutable_node = hnode.read_lock().clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
                 new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
@@ -149,5 +149,19 @@ impl<const K: usize> NodeLink<K> {
         }
         
         loaded_hnode
+    }
+
+
+    pub(super) fn get_blobid(&self) -> BlobId {
+        match &*self.inner.read().unwrap() {
+            NodeLinkKind::Unloaded(blobid) => {
+                *blobid
+            },
+            NodeLinkKind::Loaded(hnode) => {
+                hnode.read_lock().blobid.unwrap()
+            },
+            NodeLinkKind::Mutable(hnode) => panic!(),
+            NodeLinkKind::Empty => BlobId::new_empty()
+        }
     }
 }

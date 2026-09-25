@@ -79,7 +79,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = &self.root_node_link.borrow().get_mutable_hnode(self.based_on);
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
-           *self.root_node_link.borrow_mut() = NodeLink::mutable(
+           *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on));
         }
 

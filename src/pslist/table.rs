@@ -32,7 +32,7 @@ impl<'a, const K: usize> Table<K> {
         nodes.insert(root_id, root_node_handle.clone());
 
         Table { 
-            root_node_link: NodeLink::<K>::immutable(&root_node_handle),
+            root_node_link: NodeLink::<K>::new_loaded(&root_node_handle),
             root_blobid: RefCell::new(BlobId::new_empty()),
             loaded_hnodes: RefCell::new(nodes), 
             backing_store: backing_store 

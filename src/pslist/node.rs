@@ -20,7 +20,7 @@ static NEXT_NODE_DEBUG_ID: AtomicUsize  = AtomicUsize::new(1);
 #[derive(Debug)]
 pub(super) struct Node<const K: usize> {
     pub debug_id: usize,
-    pub id : Option<BlobId>,
+    pub blobid : Option<BlobId>,
     pub values : SortedArray<u128>,
     pub children: Option<Vec<NodeLink<K>>>,
     pub next_link : NodeLink<K>
@@ -32,7 +32,7 @@ impl<const K: usize> Clone for Node<K> {
     fn clone(&self) -> Self {
         Node {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-            id: self.id.clone(),
+            blobid: self.blobid.clone(),
             values: self.values.clone(),
             children: self.children.clone(),
             next_link: self.next_link.clone(),
@@ -46,10 +46,10 @@ impl<const K: usize> Node<K> {
     pub fn empty_leaf() -> Self {
             Node {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-            id: None,
+            blobid: None,
             values: SortedArray::new(),
             children: None,
-            next_link: NodeLink::empty() 
+            next_link: NodeLink::new_empty() 
         }
     }
 
@@ -58,7 +58,7 @@ impl<const K: usize> Node<K> {
         NodeHandle::new(
             Node {
                 debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-                id: None,
+                blobid: None,
                 values: values,
                 children: None,
                 next_link: next 
@@ -70,10 +70,10 @@ impl<const K: usize> Node<K> {
         NodeHandle::new(
             Node { 
                 debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-                id: None,
+                blobid: None,
                 values: values,
                 children: Some(children),
-                next_link: NodeLink::empty() 
+                next_link: NodeLink::new_empty() 
             })
     }   
 
@@ -82,24 +82,33 @@ impl<const K: usize> Node<K> {
         
         let mut serialized_node = MemoryStream::new();
 
-        // Serialize the lengths of values and children
-        serialized_node.write_all(&self.values.len().to_le_bytes());
-        
-        match (&self.children) {
-            Some(children) => {
-                serialized_node.write_all(&children.len().to_le_bytes());                
-            },
-            None => {
-                let zero : usize = 0;
-                serialized_node.write_all(&zero.to_le_bytes());
-            }
-        }
-        
-        // Serialize the values
+        // Serialize each of our child nodes
         // NYI
 
-        // Serialize the children if we have any
-        // NYI
+        // Serialize the lengths of values and children
+        let value_count = self.values.len();
+        let child_count : usize = match &self.children {
+            Some(children) => children.len(),
+            None => 0 
+        };
+        serialized_node.write_all(&value_count.to_le_bytes());
+        serialized_node.write_all(&child_count.to_le_bytes());                
+        
+        // Serialize the values
+        for &value in self.values.iter() {
+            serialized_node.write_all(&value.to_le_bytes());
+        }
+
+        // Serialize the children if we have any (by blobid)
+        if (!self.is_leaf()) {
+            for child_node_link in self.children.as_ref().unwrap() {
+                let child_blobid = child_node_link.get_blobid();
+                serialized_node.write_all(&child_blobid.to_le_bytes());
+            }
+        }
+
+        // Serialize our next link
+        serialized_node.write_all(&self.next_link.get_blobid().to_le_bytes());        
 
         // Store the serialized node in a blob and return the blobid
         backing_store.put(serialized_node.as_slice())
