@@ -13,8 +13,18 @@ impl BlobId {
     #[inline]
     pub fn new(value: std::num::NonZeroU64) -> BlobId { BlobId { 0: value } }
 
+
+    #[inline]
+    pub fn new_empty() -> BlobId { BlobId { 0: std::num::NonZeroU64::MAX } }
+
+
+    #[inline]
+    pub fn is_empty(&self) -> bool { self.0 == std::num::NonZeroU64::MAX }
+
+
     #[inline]
     pub fn value(&self) -> std::num::NonZeroU64 { self.0 }
+
 
     pub fn to_le_bytes(&self) -> [u8; 8] {
         let value: u64 = self.0.into();

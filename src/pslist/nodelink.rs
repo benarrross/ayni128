@@ -64,6 +64,11 @@ impl<const K: usize> NodeLink<K> {
     }
 
 
+    pub(super) fn set_mutable(&self, value: &NodeHandle<K>) {
+        *self.inner.write().unwrap() = NodeLinkKind::Mutable(value.clone());
+    }
+
+
     pub(super) fn unloaded(value: BlobId) -> Self {
         NodeLink {
             inner: RwLock::new(NodeLinkKind::Unloaded(value)),
@@ -71,6 +76,11 @@ impl<const K: usize> NodeLink<K> {
         }
     }
 
+
+    pub(super) fn set_unloaded(&self, blobid: BlobId) {
+        *self.inner.write().unwrap() = NodeLinkKind::Unloaded(blobid);
+    }
+ 
 
     pub(super) fn is_empty(&self) -> bool {
         let read_lock = self.inner.read().unwrap();
@@ -139,10 +149,5 @@ impl<const K: usize> NodeLink<K> {
         }
         
         loaded_hnode
-    }
-    
-
-    pub(super) fn set_unloaded(&self, blobid: BlobId) {
-        *self.inner.write().unwrap() = NodeLinkKind::Unloaded(blobid);
     }
 }

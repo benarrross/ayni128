@@ -11,7 +11,8 @@ use super::TableView;
 
 
 pub struct Table<const K: usize> {
-    root_node_link: Mutex<NodeLink<K>>, // NYI do we need this mutex, given that NodeLink has a RwLock inside it?
+    root_node_link: NodeLink<K>,
+    root_blobid: RefCell<BlobId>,
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>
 }
@@ -31,7 +32,8 @@ impl<'a, const K: usize> Table<K> {
         nodes.insert(root_id, root_node_handle.clone());
 
         Table { 
-            root_node_link: Mutex::new(NodeLink::<K>::immutable(&root_node_handle)),
+            root_node_link: NodeLink::<K>::immutable(&root_node_handle),
+            root_blobid: RefCell::new(BlobId::new_empty()),
             loaded_hnodes: RefCell::new(nodes), 
             backing_store: backing_store 
         }
@@ -48,29 +50,24 @@ impl<'a, const K: usize> Table<K> {
         // Lock the backing store so we don't commit at the same time
         let backing_store_lock = self.backing_store.lock();
 
-        TableView::new(self, &*self.root_node_link.lock().unwrap())
+        TableView::new(self, &self.root_node_link)
     }
 
 
-    pub fn commit(&self, view: &TableView<'a, K>) {
+    pub fn commit(&self, view: &TableView<'a, K>) -> BlobId {
 
         // Lock the backing store at the top of commit so we only commit one view (transaction) at a time
         let mut blob_store = self.backing_store.lock().unwrap();
-
-        // Get a write lock on our root node that will persist through the whole commit.
-        // This will ensure only one commit happens at a time.
-        // NYI get rid of the mutex on root_node_link, and lock backing_store instead
-        let root_node_write_lock = &mut self.root_node_link.lock().unwrap();
 
         // Insert all new values into the committed b+tree
         let inserted_values = view.puts.borrow();
         for value in inserted_values.iter() {
 
-            let mutable_root_hnode = root_node_write_lock.get_mutable_hnode(&self);
+            let mutable_root_hnode = self.root_node_link.get_mutable_hnode(&self);
             match super::editor::insert_and_split(&mut mutable_root_hnode.write_lock(), *value, self) {
                 SplitResult::Split(right_hnode) => {
                     let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), self);
-                    **root_node_write_lock = NodeLink::mutable(&branch_node);
+                    self.root_node_link.set_mutable(&branch_node);
                 },
                 SplitResult::NoSplit => {}
             };
@@ -80,14 +77,19 @@ impl<'a, const K: usize> Table<K> {
         // NYI
 
         // Write the edited nodes to storage (if there are any)
-        if root_node_write_lock.is_mutable() {
-            let root_hnode = root_node_write_lock.get_mutable_hnode(&self);
+        if self.root_node_link.is_mutable() {
+            let root_hnode = self.root_node_link.get_mutable_hnode(&self);
             let root_node = root_hnode.write_lock();
             let root_blobid = root_node.store(&mut blob_store);
 
             // Rewrite the root node link
-            root_node_write_lock.set_unloaded(root_blobid);
+            // NYI bring back this commented out line
+//            self.root_node_link.set_unloaded(root_blobid);
+            self.root_blobid.replace(root_blobid);
         }
+
+        // Return our root blobid, regardless of whether it changed or not
+        *self.root_blobid.borrow()
     }
 
 
