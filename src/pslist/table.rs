@@ -44,12 +44,18 @@ impl<'a, const K: usize> Table<K> {
 
 
     pub fn get_view(&'a self) -> TableView<'a, K> {
-        // NYI lock backing_store instead
+
+        // Lock the backing store so we don't commit at the same time
+        let backing_store_lock = self.backing_store.lock();
+
         TableView::new(self, &*self.root_node_link.lock().unwrap())
     }
 
 
     pub fn commit(&self, view: &TableView<'a, K>) {
+
+        // Lock the backing store at the top of commit so we only commit one view (transaction) at a time
+        let mut blob_store = self.backing_store.lock().unwrap();
 
         // Get a write lock on our root node that will persist through the whole commit.
         // This will ensure only one commit happens at a time.
@@ -74,7 +80,6 @@ impl<'a, const K: usize> Table<K> {
         // NYI
 
         // Write the edited nodes to storage (if there are any)
-        let mut blob_store = self.backing_store.lock().unwrap();
         if root_node_write_lock.is_mutable() {
             let root_hnode = root_node_write_lock.get_mutable_hnode(&self);
             let root_node = root_hnode.write_lock();
