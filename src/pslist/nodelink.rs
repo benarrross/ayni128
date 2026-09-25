@@ -46,7 +46,7 @@ impl<const K: usize> NodeLink<K> {
             label: format!("empty")
         }
     }
-    
+
 
     pub(super) fn immutable(value: &NodeHandle<K>) -> Self {
         NodeLink { 
@@ -141,4 +141,8 @@ impl<const K: usize> NodeLink<K> {
         loaded_hnode
     }
     
+
+    pub(super) fn set_unloaded(&self, blobid: BlobId) {
+        *self.inner.write().unwrap() = NodeLinkKind::Unloaded(blobid);
+    }
 }

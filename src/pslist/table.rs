@@ -81,9 +81,8 @@ impl<'a, const K: usize> Table<K> {
             let root_blobid = root_node.store(&mut blob_store);
 
             // Rewrite the root node link
-
+            root_node_write_lock.set_unloaded(root_blobid);
         }
-
     }
 
 
