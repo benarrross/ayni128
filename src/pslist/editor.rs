@@ -51,7 +51,7 @@ fn split_leaf_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
     // Make a new right node
     let split_index = node.values.len() / 2;
     let right_values = node.values.split_off(split_index);
-    let new_right_hnode = Node::new_leaf(right_values, node.next_link.clone());
+    let new_right_hnode = NodeHandle::new(Node::new_leaf(right_values, node.next_link.clone()));
 
     // Link the node we just split from to the new node in the leaf node linked list
     node.next_link = NodeLink::new_mutable(&new_right_hnode);
@@ -66,7 +66,7 @@ fn split_branch_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
     let right_values = node.values.split_off(split_index + 1);
     node.values.pop();
     let right_children = node.children.as_mut().unwrap().split_off(split_index + 1);
-    Node::new_branch(right_values, right_children)
+    NodeHandle::new(Node::new_branch(right_values, right_children))
 }
 
 
@@ -75,11 +75,11 @@ pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode
 
     // Make a new parent node that has the old node on its left and the new node on its right
     let right_node = &*right_hnode.read_lock();
-    Node::new_branch(
+    NodeHandle::new(Node::new_branch(
         SortedArray::from_values(vec![right_node.first_value(table)]),
         vec![
             NodeLink::new_mutable(&left_hnode),
             NodeLink::new_mutable(&right_hnode) 
-        ])
+        ]))
 }
 

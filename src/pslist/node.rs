@@ -44,7 +44,7 @@ impl<const K: usize> Clone for Node<K> {
 impl<const K: usize> Node<K> {  
 
     pub fn empty_leaf() -> Self {
-            Node {
+        Node {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             blobid: None,
             values: SortedArray::new(),
@@ -54,27 +54,25 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> NodeHandle<K> {
-        NodeHandle::new(
-            Node {
-                debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-                blobid: None,
-                values: values,
-                children: None,
-                next_link: next 
-            })
+    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> Self {
+        Node {
+            debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
+            blobid: None,
+            values: values,
+            children: None,
+            next_link: next 
+        }
     }
 
 
-    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLink<K>>) -> NodeHandle<K> {
-        NodeHandle::new(
-            Node { 
-                debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
-                blobid: None,
-                values: values,
-                children: Some(children),
-                next_link: NodeLink::new_empty() 
-            })
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLink<K>>) -> Self {
+        Node { 
+            debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
+            blobid: None,
+            values: values,
+            children: Some(children),
+            next_link: NodeLink::new_empty() 
+        }
     }   
 
 
@@ -180,12 +178,3 @@ fn assert(condition: bool) {
         panic!();
     }
 }
-
-// #[derive(Debug)]
-// pub(super) struct Node<const K: usize> {
-//     pub debug_id: usize,
-//     pub id : Option<BlobId>,
-//     pub values : SortedArray<u128>,
-//     pub children: Option<Vec<NodeLink<K>>>,
-//     pub next_link : NodeLink<K>
-// }
