@@ -27,7 +27,7 @@ impl<const K: usize> NodeHandle<K> {
         Ref::map(borrow, |boxed| boxed.as_ref())
     }
 
-    pub fn write_lock(&self) -> RefMut<'_, Node<K>> {
+    pub fn write_lock_deprecated(&self) -> RefMut<'_, Node<K>> {
         // Rust is an absolutely insane language. I have no idea why you need to use map just to get 
         // a reference to something on the heap. shoot me now.
         let borrow = self.node_lock.borrow_mut();

@@ -65,7 +65,7 @@ impl<'a, const K: usize> Table<K> {
 
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
             let mutable_root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            match super::editor::insert_and_split(&mut mutable_root_hnode.write_lock(), *value, self, view) {
+            match super::editor::insert_and_split(&mut view.get_mutable_node(&mutable_root_hnode), *value, self, view) {
                 SplitResult::Split(right_hnode) => {
                     let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), self, view);
                     self.root_node_link.set_mutable(&branch_node);
@@ -81,7 +81,7 @@ impl<'a, const K: usize> Table<K> {
         if self.root_node_link.is_mutable() {
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
             let root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            let root_node = root_hnode.write_lock();
+            let root_node = view.get_mutable_node(&root_hnode);
             let root_blobid = root_node.store(&mut blob_store);
 
             // Rewrite the root node link

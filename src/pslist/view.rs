@@ -78,7 +78,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode(&self.root_node_link.borrow());
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on, self) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node(&mutable_root_hnode), value, self.based_on, self) {
            *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on, self));
         }
@@ -90,6 +90,12 @@ impl<'a, const K: usize> TableView<'a, K> {
     pub(super) fn get_node(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
         id.read_lock_deprecated()
     }
+
+
+    pub(super) fn get_mutable_node(&'a self, id: &'a NodeHandle<K>) -> RefMut<'a, Node<K>> {
+        id.write_lock_deprecated()
+    }
+
 
     pub(super) fn check(&self) {
         let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
