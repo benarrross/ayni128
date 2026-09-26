@@ -100,7 +100,8 @@ impl<const K: usize> NodeLink<K> {
                 *blobid
             },
             NodeLinkKind::Loaded(hnode) => {
-                hnode.read_lock().blobid.unwrap()
+                unimplemented!()
+                //hnode.read_lock().blobid.unwrap()
             },
             NodeLinkKind::Mutable(hnode) => panic!(),
             NodeLinkKind::Empty => BlobId::new_empty()

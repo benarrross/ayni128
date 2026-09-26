@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::*;
 use crate::sortedarray::*;
 use super::table::*;
 use super::editor::*;
@@ -33,7 +33,7 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
         let hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_from_node(&hnode.read_lock(), value)
+        self.get_from_node(&self.get_node(&hnode), value)
     }
 
 
@@ -44,7 +44,7 @@ impl<'a, const K: usize> TableView<'a, K> {
                 value_in_node
             } else {
                 match self.get_next_leaf_from_node(node) {
-                    Some(hnode_next) => hnode_next.read_lock().values[0],
+                    Some(hnode_next) => self.get_node(&hnode_next).values[0],
                     None => u128::MAX
                 }
             }
@@ -52,7 +52,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         else {
             let index = node.values.find_range_index(value);
             let child_hnode = node.get_immutable_child_hnode(index, self.based_on, self);
-            self.get_from_node(&child_hnode.read_lock(), value)
+            self.get_from_node(&self.get_node(&child_hnode), value)
         }
     }
 
@@ -87,9 +87,13 @@ impl<'a, const K: usize> TableView<'a, K> {
     }
 
 
+    pub(super) fn get_node(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
+        id.read_lock_deprecated()
+    }
+
     pub(super) fn check(&self) {
         let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
-        root_node.read_lock().check(&self.based_on, self);
+        self.get_node(&root_node).check(&self.based_on, self);
 
     }
 
@@ -125,16 +129,16 @@ impl<'a, const K: usize> TableView<'a, K> {
         let loaded_hnode = match &*node_link.inner.read().unwrap() {
             NodeLinkKind::Unloaded(id) => {
                 let loaded_hnode = self.based_on.load(&node_link);
-                let mutable_node = loaded_hnode.read_lock().clone();
+                let mutable_node = self.get_node(&loaded_hnode).clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
                 new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
                 mutable_hnode
             },
             NodeLinkKind::Loaded(hnode) => {
-                let mutable_node = hnode.read_lock().clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
-                mutable_hnode
+                let node = self.get_node(&hnode).clone();
+                let hnode = NodeHandle::new(node);
+                new_inner = NodeLinkKind::Mutable(hnode.clone());
+                hnode
             },
             NodeLinkKind::Mutable(hnode) => hnode.clone(),
             NodeLinkKind::Empty => panic!("Can't get an empty node link")
@@ -152,7 +156,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
     pub(super) fn get_next_leaf_from_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
-        self.get_next_leaf_from_node(&hnode.read_lock())
+        self.get_next_leaf_from_node(&self.get_node(&hnode))
     }
 
 
@@ -195,7 +199,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut hnode = self.root_hnode.clone();
         loop {
             let hnode_cur = hnode.clone();
-            let node = hnode_cur.read_lock();
+            let node = self.based_on_view.get_node(&hnode_cur);
             if (node.is_leaf()) {
                 break;
             }
@@ -209,7 +213,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut go_to_next_leaf = false;
         let mut index = 0;
         {
-            let leaf_node = hnode.read_lock();
+            let leaf_node = self.based_on_view.get_node(&hnode);
             index = leaf_node.values.find_index(self.min);
             if (index >= leaf_node.values.len()) {
                 go_to_next_leaf = true;
@@ -228,7 +232,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.index = index;
 
         // We could be enumerating an empty list
-        let node = hnode.read_lock();
+        let node = self.based_on_view.get_node(&hnode);
         if index >= node.values.len() || node.values[index] >= self.mac {
             Option::None
         } else {
@@ -246,7 +250,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         // Advance to the next leaf node if necessary
         let mut go_to_next_leaf = false;
         {
-            let node = hnode.read_lock();
+            let node = self.based_on_view.get_node(&hnode);
             if index >= node.values.len() {
                 go_to_next_leaf = true;
             }
@@ -262,7 +266,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.hnode = Some(hnode.clone());
         self.index = index;
 
-        let node = hnode.read_lock();
+        let node = self.based_on_view.get_node(&hnode);
         if self.index >= node.values.len() || node.values[self.index] >= self.mac {
             Option::None
         } else {

@@ -123,7 +123,7 @@ impl<const K: usize> Node<K> {
         }
         else {
             let first_child_hnode = self.get_immutable_child_hnode(0, table, view);
-            let first_child_node = first_child_hnode.read_lock();
+            let first_child_node = view.get_node(&first_child_hnode);
             first_child_node.first_value(table, view)
         }
     }
@@ -166,11 +166,11 @@ impl<const K: usize> Node<K> {
                 let value = self.values[index];
 
                 let child_hnode_before = self.get_immutable_child_hnode(index, table, view);
-                let child_node_before = child_hnode_before.read_lock();
+                let child_node_before = view.get_node(&child_hnode_before);
                 assert(value > child_node_before.values[child_node_before.values.len()-1]);
 
                 let child_hnode_after = self.get_immutable_child_hnode(index+1, table, view);
-                let child_node_after = child_hnode_after.read_lock();
+                let child_node_after = view.get_node(&child_hnode_after);
                 assert(value == child_node_after.first_value(table, view));
                 let x =  child_node_after.values[0];
                 assert(value <= child_node_after.values[0]);
@@ -178,7 +178,7 @@ impl<const K: usize> Node<K> {
 
             for index in 0..self.children.as_ref().unwrap().len() {
                 let child_hnode = self.get_immutable_child_hnode(index, table, view);
-                let child_node = child_hnode.read_lock();
+                let child_node = view.get_node(&child_hnode);
                 child_node.check(table, view);
             }
         }
