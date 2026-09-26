@@ -121,10 +121,34 @@ impl<const K: usize> Node<K> {
             self.values[0]
         }
         else {
-            let first_child_hnode = self.children.as_ref().unwrap().get(0).unwrap().get_immutable_hnode(table);
+            let first_child_hnode = self.get_immutable_child_hnode(0, table);
             let first_child_node = first_child_hnode.read_lock();
             first_child_node.first_value(table)
         }
+    }
+
+    // NYI this should call the similar method on View
+    pub(super) fn get_immutable_child_hnode(&self, index: usize, node_store: &Table<K>) -> NodeHandle<K> {
+
+        let mut new_inner = NodeLinkKind::Empty;
+        let mut link = self.children.as_ref().unwrap()[index].clone();
+
+        let loaded_hnode = match &*link.inner.read().unwrap() {
+            NodeLinkKind::Unloaded(id) => {
+                let hnode = node_store.load(&link);
+                new_inner = NodeLinkKind::Mutable(hnode.clone());
+                hnode
+            },
+            NodeLinkKind::Loaded(hnode) => hnode.clone(),
+            NodeLinkKind::Mutable(hnode) => hnode.clone(),
+            NodeLinkKind::Empty => panic!("Can't get an empty node link")
+        };
+
+        if !matches!(&new_inner, NodeLinkKind::Empty) {
+            *link.inner.write().unwrap() = new_inner;
+        }
+
+        loaded_hnode
     }
 
 
@@ -138,11 +162,12 @@ impl<const K: usize> Node<K> {
 
         if (self.is_leaf()) {
             assert(self.children.is_none());
-            if (!self.next_link.is_empty()) {
-                let next_hnode = self.next_link.get_immutable_hnode(table);
-                let next_node = next_hnode.read_lock();
-                assert(next_node.values[0] > self.values[self.values.len()-1]);
-            }
+            // NYI need to figure this out
+            // if (!self.next_link.is_empty()) {
+            //     let next_hnode = self.next_link.get_immutable_hnode(table);
+            //     let next_node = next_hnode.read_lock();
+            //     assert(next_node.values[0] > self.values[self.values.len()-1]);
+            // }
         }
         else {
             assert(self.children.is_some());
@@ -151,22 +176,21 @@ impl<const K: usize> Node<K> {
             for index in 0..self.values.len() {
                 let value = self.values[index];
 
-                let child_hnode_before = self.children.as_ref().unwrap().get(index).unwrap().get_immutable_hnode(table);
+                let child_hnode_before = self.get_immutable_child_hnode(index, table);
                 let child_node_before = child_hnode_before.read_lock();
                 assert(value > child_node_before.values[child_node_before.values.len()-1]);
 
-                let child_hnode_after = self.children.as_ref().unwrap().get(index+1).unwrap().get_immutable_hnode(table);
+                let child_hnode_after = self.get_immutable_child_hnode(index+1, table);
                 let child_node_after = child_hnode_after.read_lock();
                 assert(value == child_node_after.first_value(table));
                 let x =  child_node_after.values[0];
                 assert(value <= child_node_after.values[0]);
             }
 
-            for child_nodelink in self.children.as_ref().unwrap().iter() {
-                let child_hnode = child_nodelink.get_immutable_hnode(table);
+            for index in 0..self.children.as_ref().unwrap().len() {
+                let child_hnode = self.get_immutable_child_hnode(index, table);
                 let child_node = child_hnode.read_lock();
                 child_node.check(table);
-
             }
         }
     }

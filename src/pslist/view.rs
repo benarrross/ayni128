@@ -9,7 +9,7 @@ use super::nodelink::*;
 
 pub struct TableView<'a, const K: usize> {
     based_on: &'a Table<K>,
-    root_node_link: RefCell<NodeLink<K>>,   // NYI consider making a set method on NodeLink and getting rid of the refcell here
+    root_node_link: RefCell<NodeLink<K>>,
     pub(super) puts: RefCell<SortedArray<u128>>,
     pub(super) deletes: RefCell<SortedArray<u128>>
 }
@@ -19,7 +19,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub fn new(based_on: &'a Table<K>, root_node_link: &NodeLink<K>) -> Self {
+    pub(super) fn new(based_on: &'a Table<K>, root_node_link: &NodeLink<K>) -> Self {
         TableView { 
             based_on: based_on,
             root_node_link: RefCell::new(root_node_link.clone()),
@@ -32,7 +32,7 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// Gets the next value greater than or equal to the specified value.
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
+        let hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
         self.get_from_node(&hnode.read_lock(), value)
     }
 
@@ -59,7 +59,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> TableIterator<'a, K> {
-        let root_hnode = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
+        let root_hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
         TableIterator::new(self, root_hnode, min, mac)
     }   
 
@@ -88,7 +88,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
 
     pub(super) fn check(&self) {
-        let root_node = self.root_node_link.borrow().get_immutable_hnode(self.based_on);
+        let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
         root_node.read_lock().check(&self.based_on);
 
     }
@@ -96,7 +96,29 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
     pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
         let child_link = &node.children.as_ref().unwrap()[index];
-        child_link.get_immutable_hnode(self.based_on)
+        self.get_immutable_hnode(&child_link)
+    }
+
+
+    pub(super) fn get_immutable_hnode(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+        let mut new_inner = NodeLinkKind::Empty;
+
+        let loaded_hnode = match &*node_link.inner.read().unwrap() {
+            NodeLinkKind::Unloaded(id) => {
+                let hnode = self.based_on.load(&node_link);
+                new_inner = NodeLinkKind::Mutable(hnode.clone());
+                hnode
+            },
+            NodeLinkKind::Loaded(hnode) => hnode.clone(),
+            NodeLinkKind::Mutable(hnode) => hnode.clone(),
+            NodeLinkKind::Empty => panic!("Can't get an empty node link")
+        };
+
+        if !matches!(&new_inner, NodeLinkKind::Empty) {
+            *node_link.inner.write().unwrap() = new_inner;
+        }
+
+        loaded_hnode
     }
 
 
@@ -105,11 +127,12 @@ impl<'a, const K: usize> TableView<'a, K> {
         self.get_next_leaf_from_node(&hnode.read_lock())
     }
 
+
     pub(super) fn get_next_leaf_from_node(&self, node: &Node<K>) -> Option<NodeHandle<K>> {
         if node.next_link.is_empty() {
             Option::None
         } else {
-            Option::Some(node.next_link.get_immutable_hnode(self.based_on))
+            Option::Some(self.get_immutable_hnode(&node.next_link))
         }
     }
 }

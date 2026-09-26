@@ -5,7 +5,7 @@ use super::nodehandle::*;
 
 
 #[derive(Debug, Clone)]
-enum NodeLinkKind<const K: usize> {
+pub(super) enum NodeLinkKind<const K: usize> {
     /// Link to no node
     Empty,
 
@@ -21,9 +21,9 @@ enum NodeLinkKind<const K: usize> {
 
 
 #[derive(Debug)]
-pub struct NodeLink<const K:usize> {
-    label: String,
-    inner: RwLock<NodeLinkKind<K>>  // NYI would a Mutex be faster?
+pub(super) struct NodeLink<const K:usize> {
+    pub label: String,
+    pub inner: RwLock<NodeLinkKind<K>>  // NYI would a Mutex be faster?
 }
 
 
@@ -94,28 +94,28 @@ impl<const K: usize> NodeLink<K> {
     }
 
     
-    /// Gets a node handle from a link, loading the node from storage if necessary.
-    pub(super) fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
+    // /// Gets a node handle from a link, loading the node from storage if necessary.
+    // pub(super) fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
 
-        let mut new_inner = NodeLinkKind::Empty;
+    //     let mut new_inner = NodeLinkKind::Empty;
 
-        let loaded_hnode = match &*self.inner.read().unwrap() {
-            NodeLinkKind::Unloaded(id) => {
-                let hnode = node_store.load(&self);
-                new_inner = NodeLinkKind::Mutable(hnode.clone());
-                hnode
-            },
-            NodeLinkKind::Loaded(hnode) => hnode.clone(),
-            NodeLinkKind::Mutable(hnode) => hnode.clone(),
-            NodeLinkKind::Empty => panic!("Can't get an empty node link")
-        };
+    //     let loaded_hnode = match &*self.inner.read().unwrap() {
+    //         NodeLinkKind::Unloaded(id) => {
+    //             let hnode = node_store.load(&self);
+    //             new_inner = NodeLinkKind::Mutable(hnode.clone());
+    //             hnode
+    //         },
+    //         NodeLinkKind::Loaded(hnode) => hnode.clone(),
+    //         NodeLinkKind::Mutable(hnode) => hnode.clone(),
+    //         NodeLinkKind::Empty => panic!("Can't get an empty node link")
+    //     };
 
-        if !matches!(&new_inner, NodeLinkKind::Empty) {
-            *self.inner.write().unwrap() = new_inner;
-        }
+    //     if !matches!(&new_inner, NodeLinkKind::Empty) {
+    //         *self.inner.write().unwrap() = new_inner;
+    //     }
 
-        loaded_hnode
-    }
+    //     loaded_hnode
+    // }
 
 
     /// Gets a mutable node handle from a link, loading the node from storage if necessary.
