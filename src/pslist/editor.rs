@@ -21,7 +21,7 @@ pub fn insert_and_split<'a, const K:usize>(node: &mut Node<K>, value: u128, tabl
     else {
         // Find the child this should go in and ask the child to insert the value
         let index = node.values.find_range_index(value);
-        let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable_hnode(table);
+        let mut mutable_child_hnode = node.get_mutable_child_hnode(index, table, view);
 
         // Handle the child splitting (which might force us to split the current node also)
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, table, view) {

@@ -93,64 +93,6 @@ impl<const K: usize> NodeLink<K> {
         matches!(*read_lock, NodeLinkKind::Mutable(_) )
     }
 
-    
-    // /// Gets a node handle from a link, loading the node from storage if necessary.
-    // pub(super) fn get_immutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
-
-    //     let mut new_inner = NodeLinkKind::Empty;
-
-    //     let loaded_hnode = match &*self.inner.read().unwrap() {
-    //         NodeLinkKind::Unloaded(id) => {
-    //             let hnode = node_store.load(&self);
-    //             new_inner = NodeLinkKind::Mutable(hnode.clone());
-    //             hnode
-    //         },
-    //         NodeLinkKind::Loaded(hnode) => hnode.clone(),
-    //         NodeLinkKind::Mutable(hnode) => hnode.clone(),
-    //         NodeLinkKind::Empty => panic!("Can't get an empty node link")
-    //     };
-
-    //     if !matches!(&new_inner, NodeLinkKind::Empty) {
-    //         *self.inner.write().unwrap() = new_inner;
-    //     }
-
-    //     loaded_hnode
-    // }
-
-
-    /// Gets a mutable node handle from a link, loading the node from storage if necessary.
-    /// This should ONLY be used by views when editing the tree.
-    pub(super) fn get_mutable_hnode(&self, node_store: &Table<K>) -> NodeHandle<K> {
-
-        let mut new_inner = NodeLinkKind::Empty;
-
-        let loaded_hnode = match &*self.inner.read().unwrap() {
-            NodeLinkKind::Unloaded(id) => {
-                let loaded_hnode = node_store.load(&self);
-                let mutable_node = loaded_hnode.read_lock().clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
-                mutable_hnode
-            },
-            NodeLinkKind::Loaded(hnode) => {
-                let mutable_node = hnode.read_lock().clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
-                mutable_hnode
-            },
-            NodeLinkKind::Mutable(hnode) => hnode.clone(),
-            NodeLinkKind::Empty => panic!("Can't get an empty node link")
-        };
-
-        if !matches!(&new_inner, NodeLinkKind::Empty) {
-            // NYI need to make sure nobody else set this between the release of the read lock and
-            // aquisition of the write lock
-            *self.inner.write().unwrap() = new_inner;
-        }
-        
-        loaded_hnode
-    }
-
 
     pub(super) fn get_blobid(&self) -> BlobId {
         match &*self.inner.read().unwrap() {

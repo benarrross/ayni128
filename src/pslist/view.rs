@@ -77,7 +77,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = &self.root_node_link.borrow().get_mutable_hnode(self.based_on);
+        let mutable_root_hnode = self.get_mutable_hnode(&self.root_node_link.borrow());
         if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on, self) {
            *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on, self));
@@ -112,6 +112,40 @@ impl<'a, const K: usize> TableView<'a, K> {
             *node_link.inner.write().unwrap() = new_inner;
         }
 
+        loaded_hnode
+    }
+
+    
+    /// Gets a mutable node handle from a link, loading the node from storage if necessary.
+    /// This should ONLY be used by views when editing the tree.
+    pub(super) fn get_mutable_hnode(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+
+        let mut new_inner = NodeLinkKind::Empty;
+
+        let loaded_hnode = match &*node_link.inner.read().unwrap() {
+            NodeLinkKind::Unloaded(id) => {
+                let loaded_hnode = self.based_on.load(&node_link);
+                let mutable_node = loaded_hnode.read_lock().clone();
+                let mutable_hnode = NodeHandle::new(mutable_node);
+                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
+                mutable_hnode
+            },
+            NodeLinkKind::Loaded(hnode) => {
+                let mutable_node = hnode.read_lock().clone();
+                let mutable_hnode = NodeHandle::new(mutable_node);
+                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
+                mutable_hnode
+            },
+            NodeLinkKind::Mutable(hnode) => hnode.clone(),
+            NodeLinkKind::Empty => panic!("Can't get an empty node link")
+        };
+
+        if !matches!(&new_inner, NodeLinkKind::Empty) {
+            // NYI need to make sure nobody else set this between the release of the read lock and
+            // aquisition of the write lock
+            *node_link.inner.write().unwrap() = new_inner;
+        }
+        
         loaded_hnode
     }
 

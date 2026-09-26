@@ -135,6 +135,12 @@ impl<const K: usize> Node<K> {
     }
 
 
+    pub(super) fn get_mutable_child_hnode<'a>(&self, index: usize, node_store: &Table<K>, view: &TableView<'a, K>) -> NodeHandle<K> {
+        let link = self.children.as_ref().unwrap()[index].clone();
+        view.get_mutable_hnode(&link)
+    }
+
+
     pub fn check<'a>(&self, table: &Table<K>, view: &TableView<'a, K>) {
 
         let mut last: u128 = 0;
