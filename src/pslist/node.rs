@@ -3,6 +3,7 @@ use std::io::Write;
 use crate::blobstore::*;
 use crate::sortedarray::*;
 use crate::Table;
+use crate::TableView;
 use super::nodehandle::*;
 use super::nodelink::*;
 
@@ -116,43 +117,25 @@ impl<const K: usize> Node<K> {
     pub fn is_leaf(&self) -> bool { self.children.is_none() }
 
 
-    pub fn first_value(&self, table: &Table<K>) -> u128 {
+    pub fn first_value<'a>(&self, table: &Table<K>, view: &TableView<'a, K>) -> u128 {
         if (self.is_leaf()) {
             self.values[0]
         }
         else {
-            let first_child_hnode = self.get_immutable_child_hnode(0, table);
+            let first_child_hnode = self.get_immutable_child_hnode(0, table, view);
             let first_child_node = first_child_hnode.read_lock();
-            first_child_node.first_value(table)
+            first_child_node.first_value(table, view)
         }
     }
 
-    // NYI this should call the similar method on View
-    pub(super) fn get_immutable_child_hnode(&self, index: usize, node_store: &Table<K>) -> NodeHandle<K> {
 
-        let mut new_inner = NodeLinkKind::Empty;
-        let mut link = self.children.as_ref().unwrap()[index].clone();
-
-        let loaded_hnode = match &*link.inner.read().unwrap() {
-            NodeLinkKind::Unloaded(id) => {
-                let hnode = node_store.load(&link);
-                new_inner = NodeLinkKind::Mutable(hnode.clone());
-                hnode
-            },
-            NodeLinkKind::Loaded(hnode) => hnode.clone(),
-            NodeLinkKind::Mutable(hnode) => hnode.clone(),
-            NodeLinkKind::Empty => panic!("Can't get an empty node link")
-        };
-
-        if !matches!(&new_inner, NodeLinkKind::Empty) {
-            *link.inner.write().unwrap() = new_inner;
-        }
-
-        loaded_hnode
+    pub(super) fn get_immutable_child_hnode<'a>(&self, index: usize, node_store: &Table<K>, view: &TableView<'a, K>) -> NodeHandle<K> {
+        let link = self.children.as_ref().unwrap()[index].clone();
+        view.get_immutable_hnode(&link)
     }
 
 
-    pub fn check(&self, table: &Table<K>) {
+    pub fn check<'a>(&self, table: &Table<K>, view: &TableView<'a, K>) {
 
         let mut last: u128 = 0;
         for value in self.values.iter() {
@@ -176,21 +159,21 @@ impl<const K: usize> Node<K> {
             for index in 0..self.values.len() {
                 let value = self.values[index];
 
-                let child_hnode_before = self.get_immutable_child_hnode(index, table);
+                let child_hnode_before = self.get_immutable_child_hnode(index, table, view);
                 let child_node_before = child_hnode_before.read_lock();
                 assert(value > child_node_before.values[child_node_before.values.len()-1]);
 
-                let child_hnode_after = self.get_immutable_child_hnode(index+1, table);
+                let child_hnode_after = self.get_immutable_child_hnode(index+1, table, view);
                 let child_node_after = child_hnode_after.read_lock();
-                assert(value == child_node_after.first_value(table));
+                assert(value == child_node_after.first_value(table, view));
                 let x =  child_node_after.values[0];
                 assert(value <= child_node_after.values[0]);
             }
 
             for index in 0..self.children.as_ref().unwrap().len() {
-                let child_hnode = self.get_immutable_child_hnode(index, table);
+                let child_hnode = self.get_immutable_child_hnode(index, table, view);
                 let child_node = child_hnode.read_lock();
-                child_node.check(table);
+                child_node.check(table, view);
             }
         }
     }

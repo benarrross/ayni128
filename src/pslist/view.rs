@@ -51,7 +51,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         }
         else {
             let index = node.values.find_range_index(value);
-            let child_hnode = self.get_immutable_child_hnode(node, index);
+            let child_hnode = node.get_immutable_child_hnode(index, self.based_on, self);
             self.get_from_node(&child_hnode.read_lock(), value)
         }
     }
@@ -78,9 +78,9 @@ impl<'a, const K: usize> TableView<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = &self.root_node_link.borrow().get_mutable_hnode(self.based_on);
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_root_hnode.write_lock(), value, self.based_on, self) {
            *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
-                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on));
+                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on, self));
         }
 
         self.check();
@@ -89,14 +89,8 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     pub(super) fn check(&self) {
         let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
-        root_node.read_lock().check(&self.based_on);
+        root_node.read_lock().check(&self.based_on, self);
 
-    }
-
-    /// Gets a handle to a child node, loading the child node if necessary. This should only be used for read operations.
-    pub(super) fn get_immutable_child_hnode(&self, node: &Node<K>, index: usize) -> NodeHandle<K> {
-        let child_link = &node.children.as_ref().unwrap()[index];
-        self.get_immutable_hnode(&child_link)
     }
 
 
@@ -173,7 +167,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
             }
 
             let child_index = node.values.find_range_index(self.min);
-            hnode = self.based_on_view.get_immutable_child_hnode(&node, child_index);
+            hnode = node.get_immutable_child_hnode(child_index, self.based_on_view.based_on, self.based_on_view);
         }
 
         // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 

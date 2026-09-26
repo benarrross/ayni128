@@ -64,9 +64,9 @@ impl<'a, const K: usize> Table<K> {
         for value in inserted_values.iter() {
 
             let mutable_root_hnode = self.root_node_link.get_mutable_hnode(&self);
-            match super::editor::insert_and_split(&mut mutable_root_hnode.write_lock(), *value, self) {
+            match super::editor::insert_and_split(&mut mutable_root_hnode.write_lock(), *value, self, view) {
                 SplitResult::Split(right_hnode) => {
-                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), self);
+                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), self, view);
                     self.root_node_link.set_mutable(&branch_node);
                 },
                 SplitResult::NoSplit => {}

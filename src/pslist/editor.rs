@@ -1,4 +1,5 @@
 use crate::pslist::Table;
+use crate::pslist::TableView;
 use crate::sortedarray::*;
 use super::node::*;
 use super::nodehandle::*;
@@ -6,7 +7,7 @@ use super::nodelink::*;
 
 
 /// Inserts a value into a node and splits it if necessary.
-pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, table: &Table<K>) -> SplitResult<K> {
+pub fn insert_and_split<'a, const K:usize>(node: &mut Node<K>, value: u128, table: &Table<K>, view: &TableView<'a, K>) -> SplitResult<K> {
 
     if node.is_leaf() {
         node.values.insert(value);
@@ -23,10 +24,10 @@ pub fn insert_and_split<const K:usize>(node: &mut Node<K>, value: u128, table: &
         let mut mutable_child_hnode = &node.children.as_ref().unwrap()[index].get_mutable_hnode(table);
 
         // Handle the child splitting (which might force us to split the current node also)
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, table) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut mutable_child_hnode.write_lock(), value, table, view) {
 
             let right_node = &*right_hnode.read_lock();
-            let first_value_in_right_node = right_node.first_value(table);
+            let first_value_in_right_node = right_node.first_value(table, view);
 
             node.values.insert(first_value_in_right_node);
             let new_child_index = node.values.find_range_index(first_value_in_right_node);
@@ -71,12 +72,12 @@ fn split_branch_node<const K:usize>(node: &mut Node<K>) -> NodeHandle<K> {
 
 
 /// Creates a new branch node from the specified left and right nodes
-pub fn create_branch_node<const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>, table: &Table<K>) -> NodeHandle<K> {
+pub fn create_branch_node<'a, const K:usize>(left_hnode: &NodeHandle<K>, right_hnode: NodeHandle<K>, table: &Table<K>, view: &TableView<'a, K>) -> NodeHandle<K> {
 
     // Make a new parent node that has the old node on its left and the new node on its right
     let right_node = &*right_hnode.read_lock();
     NodeHandle::new(Node::new_branch(
-        SortedArray::from_values(vec![right_node.first_value(table)]),
+        SortedArray::from_values(vec![right_node.first_value(table, view)]),
         vec![
             NodeLink::new_mutable(&left_hnode),
             NodeLink::new_mutable(&right_hnode) 
