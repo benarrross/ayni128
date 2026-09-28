@@ -23,14 +23,10 @@ impl<'a, const K: usize> Table<K> {
 
     pub fn new(backing_store: Arc<Mutex<BlobStore>>) -> Self {
 
-        // Make a new, empty node for our root, store it, and add it to  our blobs map
+        // Make a new, empty node for our root, store it, and add it to the backing store
         let root_page = Page::<K>::empty_leaf();
         let root_id = root_page.store(backing_store.lock().as_mut().unwrap());
-
-        // Start off with one node
-        let mut pages : HashMap<BlobId, PageHandle<K>> = HashMap::new();
         let root_hpage = PageHandle::new(root_page); 
-        pages.insert(root_id, root_hpage.clone());
 
         Table { 
             root_page_link: PageLink::<K>::new_loaded(&root_hpage),
