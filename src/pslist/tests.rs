@@ -3,6 +3,7 @@ use std::io::Cursor;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use crate::blobstore::*;
 use super::Table;
 use super::TableView;
@@ -200,6 +201,24 @@ fn save_and_load() {
     }
 
 }
+
+
+// #[test]
+// fn concurent_writes() {
+
+//     const K:usize = 4;
+//     let mut memory_buffer = Box::new(MemoryStream::new());
+//     let mut blobs = Arc::new(Mutex::new(BlobStore::new(memory_buffer)));
+
+//     let mut list = Table::<4>::new(blobs.clone());
+//     for i in 0..10 {
+//         let hthread = thread::spawn(move || {
+//             let view = list.get_view();
+//             view.insert(i);
+//             list.commit(&view);
+//         });
+//     }
+// }
 
 
 fn assert_expected_values<'a, const K: usize>(expected: &[u128], actual: &TableView<'a, K>) {
