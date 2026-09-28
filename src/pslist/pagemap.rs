@@ -18,13 +18,9 @@ impl<const K: usize> PageMap<K> {
         }
     }
 
-    pub fn alloc_id(&self) -> u32 {
-        self.map.len() as u32
-    }
-
 
     pub fn insert(&mut self, blobid: BlobId, node: Page<K>) -> u32 {
-        let id = self.alloc_id();
+        let id = self.map.len() as u32;
         self.map.insert(id, (blobid, Arc::new(Mutex::new(node))));
         id
     }
