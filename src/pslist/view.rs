@@ -180,7 +180,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
 
 pub struct TableIterator<'a, const K: usize> {
-    based_on_view: &'a TableView<'a, K>,
+    view: &'a TableView<'a, K>,
     root_hnode: NodeHandle<K>,
     min: u128,
     mac: u128,
@@ -191,9 +191,9 @@ pub struct TableIterator<'a, const K: usize> {
 
 impl<'a, const K: usize> TableIterator<'a,  K> {
 
-    pub(super) fn new(based_on_view: &'a TableView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
+    pub(super) fn new(view: &'a TableView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
         TableIterator { 
-            based_on_view, 
+            view, 
             root_hnode: root_node.clone(), 
             min: min, 
             mac: mac,
@@ -208,13 +208,13 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut hnode = self.root_hnode.clone();
         loop {
             let hnode_cur = hnode.clone();
-            let node = self.based_on_view.get_node(&hnode_cur);
+            let node = self.view.get_node(&hnode_cur);
             if (node.is_leaf()) {
                 break;
             }
 
             let child_index = node.values.find_range_index(self.min);
-            hnode = node.get_immutable_child_hnode(child_index, self.based_on_view);
+            hnode = node.get_immutable_child_hnode(child_index, self.view);
         }
 
         // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 
@@ -222,14 +222,14 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut go_to_next_leaf = false;
         let mut index = 0;
         {
-            let leaf_node = self.based_on_view.get_node(&hnode);
+            let leaf_node = self.view.get_node(&hnode);
             index = leaf_node.values.find_index(self.min);
             if (index >= leaf_node.values.len()) {
                 go_to_next_leaf = true;
             }
         }
         if (go_to_next_leaf) {
-            hnode = match self.based_on_view.get_next_leaf_from_hnode(&hnode) {
+            hnode = match self.view.get_next_leaf_from_hnode(&hnode) {
                 Some(hnode_next) => hnode_next,
                 None => { return Option::None; }
             };
@@ -241,7 +241,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.index = index;
 
         // We could be enumerating an empty list
-        let node = self.based_on_view.get_node(&hnode);
+        let node = self.view.get_node(&hnode);
         if index >= node.values.len() || node.values[index] >= self.mac {
             Option::None
         } else {
@@ -259,13 +259,13 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         // Advance to the next leaf node if necessary
         let mut go_to_next_leaf = false;
         {
-            let node = self.based_on_view.get_node(&hnode);
+            let node = self.view.get_node(&hnode);
             if index >= node.values.len() {
                 go_to_next_leaf = true;
             }
         }
         if go_to_next_leaf {
-            hnode = match self.based_on_view.get_next_leaf_from_hnode(&hnode) {
+            hnode = match self.view.get_next_leaf_from_hnode(&hnode) {
                 Some(next_hnode) => next_hnode,
                 None => { return None; }
             };
@@ -275,7 +275,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.hnode = Some(hnode.clone());
         self.index = index;
 
-        let node = self.based_on_view.get_node(&hnode);
+        let node = self.view.get_node(&hnode);
         if self.index >= node.values.len() || node.values[self.index] >= self.mac {
             Option::None
         } else {
