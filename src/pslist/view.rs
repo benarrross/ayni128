@@ -51,7 +51,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         }
         else {
             let index = node.values.find_range_index(value);
-            let child_hnode = node.get_immutable_child_hnode(index, self.based_on, self);
+            let child_hnode = node.get_immutable_child_hnode(index, self);
             self.get_from_node(&self.get_node(&child_hnode), value)
         }
     }
@@ -78,14 +78,17 @@ impl<'a, const K: usize> TableView<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode(&self.root_node_link.borrow());
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node(&mutable_root_hnode), value, self.based_on, self) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node(&mutable_root_hnode), value, self) {
            *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
-                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self.based_on, self));
+                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self));
         }
 
         self.check();
     }
 
+    pub(super) fn get_next_nodeid(&'a self) -> u32 {
+        unimplemented!();
+    }
 
     pub(super) fn get_node(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
         id.read_lock_deprecated()
@@ -99,7 +102,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     pub(super) fn check(&self) {
         let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_node(&root_node).check(&self.based_on, self);
+        self.get_node(&root_node).check(self);
 
     }
 
@@ -211,7 +214,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
             }
 
             let child_index = node.values.find_range_index(self.min);
-            hnode = node.get_immutable_child_hnode(child_index, self.based_on_view.based_on, self.based_on_view);
+            hnode = node.get_immutable_child_hnode(child_index, self.based_on_view);
         }
 
         // The leaf node we are pointing at might be the one before the one we want, if the caller asks for a value 

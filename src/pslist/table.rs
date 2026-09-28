@@ -65,9 +65,9 @@ impl<'a, const K: usize> Table<K> {
 
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
             let mutable_root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            match super::editor::insert_and_split(&mut view.get_mutable_node(&mutable_root_hnode), *value, self, view) {
+            match super::editor::insert_and_split(&mut view.get_mutable_node(&mutable_root_hnode), *value, view) {
                 SplitResult::Split(right_hnode) => {
-                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), self, view);
+                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), view);
                     self.root_node_link.set_mutable(&branch_node);
                 },
                 SplitResult::NoSplit => {}

@@ -117,31 +117,31 @@ impl<const K: usize> Node<K> {
     pub fn is_leaf(&self) -> bool { self.children.is_none() }
 
 
-    pub fn first_value<'a>(&self, table: &Table<K>, view: &TableView<'a, K>) -> u128 {
+    pub fn first_value<'a>(&self, view: &TableView<'a, K>) -> u128 {
         if (self.is_leaf()) {
             self.values[0]
         }
         else {
-            let first_child_hnode = self.get_immutable_child_hnode(0, table, view);
+            let first_child_hnode = self.get_immutable_child_hnode(0, view);
             let first_child_node = view.get_node(&first_child_hnode);
-            first_child_node.first_value(table, view)
+            first_child_node.first_value( view)
         }
     }
 
 
-    pub(super) fn get_immutable_child_hnode<'a>(&self, index: usize, node_store: &Table<K>, view: &TableView<'a, K>) -> NodeHandle<K> {
+    pub(super) fn get_immutable_child_hnode<'a>(&self, index: usize, view: &TableView<'a, K>) -> NodeHandle<K> {
         let link = self.children.as_ref().unwrap()[index].clone();
         view.get_immutable_hnode(&link)
     }
 
 
-    pub(super) fn get_mutable_child_hnode<'a>(&self, index: usize, node_store: &Table<K>, view: &TableView<'a, K>) -> NodeHandle<K> {
+    pub(super) fn get_mutable_child_hnode<'a>(&self, index: usize, view: &TableView<'a, K>) -> NodeHandle<K> {
         let link = self.children.as_ref().unwrap()[index].clone();
         view.get_mutable_hnode(&link)
     }
 
 
-    pub fn check<'a>(&self, table: &Table<K>, view: &TableView<'a, K>) {
+    pub fn check<'a>(&self, view: &TableView<'a, K>) {
 
         let mut last: u128 = 0;
         for value in self.values.iter() {
@@ -165,21 +165,21 @@ impl<const K: usize> Node<K> {
             for index in 0..self.values.len() {
                 let value = self.values[index];
 
-                let child_hnode_before = self.get_immutable_child_hnode(index, table, view);
+                let child_hnode_before = self.get_immutable_child_hnode(index, view);
                 let child_node_before = view.get_node(&child_hnode_before);
                 assert(value > child_node_before.values[child_node_before.values.len()-1]);
 
-                let child_hnode_after = self.get_immutable_child_hnode(index+1, table, view);
+                let child_hnode_after = self.get_immutable_child_hnode(index+1, view);
                 let child_node_after = view.get_node(&child_hnode_after);
-                assert(value == child_node_after.first_value(table, view));
+                assert(value == child_node_after.first_value(view));
                 let x =  child_node_after.values[0];
                 assert(value <= child_node_after.values[0]);
             }
 
             for index in 0..self.children.as_ref().unwrap().len() {
-                let child_hnode = self.get_immutable_child_hnode(index, table, view);
+                let child_hnode = self.get_immutable_child_hnode(index, view);
                 let child_node = view.get_node(&child_hnode);
-                child_node.check(table, view);
+                child_node.check(view);
             }
         }
     }
