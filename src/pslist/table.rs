@@ -14,9 +14,8 @@ use super::TableView;
 pub struct Table<const K: usize> {
     root_page_link: PageLink<K>,
     root_blobid: RefCell<BlobId>,
-    loaded_hpages: RefCell<HashMap<BlobId, PageHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>,
-    pages: Arc<Mutex<PageMap<K>>>,
+    loaded_pages: Arc<Mutex<PageMap<K>>>,
 }
 
 
@@ -36,9 +35,8 @@ impl<'a, const K: usize> Table<K> {
         Table { 
             root_page_link: PageLink::<K>::new_loaded(&root_hpage),
             root_blobid: RefCell::new(BlobId::new_empty()),
-            loaded_hpages: RefCell::new(pages), 
             backing_store: backing_store,
-            pages: Arc::new(Mutex::new(PageMap::new()))
+            loaded_pages: Arc::new(Mutex::new(PageMap::new()))
         }
     }
 
