@@ -7,6 +7,7 @@ use crate::pslist::editor::create_branch_node;
 use super::node::*;
 use super::nodehandle::*;
 use super::nodelink::*;
+use super::nodemap::*;
 use super::TableView;
 
 
@@ -14,7 +15,8 @@ pub struct Table<const K: usize> {
     root_node_link: NodeLink<K>,
     root_blobid: RefCell<BlobId>,
     loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
-    backing_store: Arc<Mutex<BlobStore>>
+    backing_store: Arc<Mutex<BlobStore>>,
+    nodes: Arc<Mutex<NodeMap<K>>>,
 }
 
 
@@ -35,7 +37,8 @@ impl<'a, const K: usize> Table<K> {
             root_node_link: NodeLink::<K>::new_loaded(&root_node_handle),
             root_blobid: RefCell::new(BlobId::new_empty()),
             loaded_hnodes: RefCell::new(nodes), 
-            backing_store: backing_store 
+            backing_store: backing_store,
+            nodes: Arc::new(Mutex::new(NodeMap::new()))
         }
     }
 
@@ -65,7 +68,7 @@ impl<'a, const K: usize> Table<K> {
 
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
             let mutable_root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            match super::editor::insert_and_split(&mut view.get_mutable_node(&mutable_root_hnode), *value, view) {
+            match super::editor::insert_and_split(&mut view.get_mutable_node_deprecated(&mutable_root_hnode), *value, view) {
                 SplitResult::Split(right_hnode) => {
                     let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), view);
                     self.root_node_link.set_mutable(&branch_node);
@@ -81,7 +84,7 @@ impl<'a, const K: usize> Table<K> {
         if self.root_node_link.is_mutable() {
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
             let root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            let root_node = view.get_mutable_node(&root_hnode);
+            let root_node = view.get_mutable_node_deprecated(&root_hnode);
             let root_blobid = root_node.store(&mut blob_store);
 
             // Rewrite the root node link

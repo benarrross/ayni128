@@ -33,7 +33,7 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
         let hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_from_node(&self.get_node(&hnode), value)
+        self.get_from_node(&self.get_node_deprecated(&hnode), value)
     }
 
 
@@ -44,7 +44,7 @@ impl<'a, const K: usize> TableView<'a, K> {
                 value_in_node
             } else {
                 match self.get_next_leaf_from_node(node) {
-                    Some(hnode_next) => self.get_node(&hnode_next).values[0],
+                    Some(hnode_next) => self.get_node_deprecated(&hnode_next).values[0],
                     None => u128::MAX
                 }
             }
@@ -52,7 +52,7 @@ impl<'a, const K: usize> TableView<'a, K> {
         else {
             let index = node.values.find_range_index(value);
             let child_hnode = node.get_immutable_child_hnode(index, self);
-            self.get_from_node(&self.get_node(&child_hnode), value)
+            self.get_from_node(&self.get_node_deprecated(&child_hnode), value)
         }
     }
 
@@ -78,7 +78,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
         // Update our b+tree and store the new root if necessary
         let mutable_root_hnode = self.get_mutable_hnode(&self.root_node_link.borrow());
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node(&mutable_root_hnode), value, self) {
+        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node_deprecated(&mutable_root_hnode), value, self) {
            *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
                 &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self));
         }
@@ -90,19 +90,25 @@ impl<'a, const K: usize> TableView<'a, K> {
         unimplemented!();
     }
 
-    pub(super) fn get_node(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
+    pub(super) fn get_node_deprecated(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
         id.read_lock_deprecated()
     }
 
 
-    pub(super) fn get_mutable_node(&'a self, id: &'a NodeHandle<K>) -> RefMut<'a, Node<K>> {
+    // pub(super) fn get_node_new(&'a self, nodeid: u32) -> &Node<K> {
+    //     let nodemap = self.based_on.nodes.lock().unwrap();
+    //     nodemap.get(nodeid)
+    // }
+
+
+    pub(super) fn get_mutable_node_deprecated(&'a self, id: &'a NodeHandle<K>) -> RefMut<'a, Node<K>> {
         id.write_lock_deprecated()
     }
 
 
     pub(super) fn check(&self) {
         let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_node(&root_node).check(self);
+        self.get_node_deprecated(&root_node).check(self);
 
     }
 
@@ -138,13 +144,13 @@ impl<'a, const K: usize> TableView<'a, K> {
         let loaded_hnode = match &*node_link.inner.read().unwrap() {
             NodeLinkKind::Unloaded(id) => {
                 let loaded_hnode = self.based_on.load(&node_link);
-                let mutable_node = self.get_node(&loaded_hnode).clone();
+                let mutable_node = self.get_node_deprecated(&loaded_hnode).clone();
                 let mutable_hnode = NodeHandle::new(mutable_node);
                 new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
                 mutable_hnode
             },
             NodeLinkKind::Loaded(hnode) => {
-                let node = self.get_node(&hnode).clone();
+                let node = self.get_node_deprecated(&hnode).clone();
                 let hnode = NodeHandle::new(node);
                 new_inner = NodeLinkKind::Mutable(hnode.clone());
                 hnode
@@ -165,7 +171,7 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
     pub(super) fn get_next_leaf_from_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
-        self.get_next_leaf_from_node(&self.get_node(&hnode))
+        self.get_next_leaf_from_node(&self.get_node_deprecated(&hnode))
     }
 
 
@@ -208,7 +214,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut hnode = self.root_hnode.clone();
         loop {
             let hnode_cur = hnode.clone();
-            let node = self.view.get_node(&hnode_cur);
+            let node = self.view.get_node_deprecated(&hnode_cur);
             if (node.is_leaf()) {
                 break;
             }
@@ -222,7 +228,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut go_to_next_leaf = false;
         let mut index = 0;
         {
-            let leaf_node = self.view.get_node(&hnode);
+            let leaf_node = self.view.get_node_deprecated(&hnode);
             index = leaf_node.values.find_index(self.min);
             if (index >= leaf_node.values.len()) {
                 go_to_next_leaf = true;
@@ -241,7 +247,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.index = index;
 
         // We could be enumerating an empty list
-        let node = self.view.get_node(&hnode);
+        let node = self.view.get_node_deprecated(&hnode);
         if index >= node.values.len() || node.values[index] >= self.mac {
             Option::None
         } else {
@@ -259,7 +265,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         // Advance to the next leaf node if necessary
         let mut go_to_next_leaf = false;
         {
-            let node = self.view.get_node(&hnode);
+            let node = self.view.get_node_deprecated(&hnode);
             if index >= node.values.len() {
                 go_to_next_leaf = true;
             }
@@ -275,7 +281,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.hnode = Some(hnode.clone());
         self.index = index;
 
-        let node = self.view.get_node(&hnode);
+        let node = self.view.get_node_deprecated(&hnode);
         if self.index >= node.values.len() || node.values[self.index] >= self.mac {
             Option::None
         } else {

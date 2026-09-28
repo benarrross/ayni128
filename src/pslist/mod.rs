@@ -3,6 +3,7 @@ mod editor;
 mod node;
 mod nodehandle;
 mod nodelink;
+mod nodemap;
 mod view;
 
 pub use table::*;
