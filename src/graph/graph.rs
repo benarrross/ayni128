@@ -34,7 +34,7 @@ pub struct Graph {
 
 
 impl Graph {
-    pub fn new(mut backing_store: Box<Stream>) -> Self {
+    pub fn new(mut backing_store: Stream) -> Self {
 
         let blob_store = Arc::new(Mutex::new(BlobStore::new(backing_store)));
         let mut strings = StringTable::new(blob_store.clone());

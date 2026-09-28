@@ -5,8 +5,7 @@ use crate::blobstore::*;
 
 #[test]
 fn put_get_one_blob() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
 
     let blob_contents: [u8;_] = [1, 2, 3];
     let root_blob_id = blobs.put(&blob_contents);
@@ -19,16 +18,16 @@ fn put_get_one_blob() {
 
 #[test]
 fn reopen_store_with_one_blob() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
 
     let blob_contents: [u8;_] = [1, 2, 3];
     let root_blob_id = blobs.put(&blob_contents);
 
-    // let mut blobs = BlobStore::new(memory_buffer);
-    // let read = blobs.get(root_blob_id);
+    let bytes_copy = blobs.get_bytes();
+    let mut blobs = BlobStore::new(Stream::from_bytes(bytes_copy));
+    let read = blobs.get(root_blob_id);
 
-    //assert_eq_slices(&blob_contents, &read[..]);
+    assert_eq_slices(&blob_contents, &read[..]);
 }
 
 

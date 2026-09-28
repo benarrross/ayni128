@@ -19,16 +19,14 @@ TESTS TO ADD
 
 #[test]
 fn create_empty() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 }
 
 
 #[test]
 fn enum_empty() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
     let mut view = list.get_view();
@@ -41,8 +39,7 @@ fn enum_empty() {
 
 #[test]
 fn insert_one() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
     // Insert 99 in a view (but don't commit it yet)
@@ -71,8 +68,7 @@ fn insert_one() {
 
 #[test]
 fn insert_several() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let expected_values = vec![10, 32, 99, 999];
 
@@ -110,8 +106,7 @@ fn insert_several() {
 #[test]
 fn insert_many_in_order() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let mut inserted_count = 0;
     let expected_values : Vec<u128> = (1..50).collect();
@@ -147,8 +142,7 @@ fn insert_many_in_order() {
 #[test]
 fn insert_many_out_of_order() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = BlobStore::new(memory_buffer);
+    let mut blobs = BlobStore::new(Stream::new());
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
         1000, 1001, 1009, 1002, 46, 18, 19, 20, 21, 22, 23, 24, 25, 2, 9, 8, 7, 6, 5, 3, 800, 801, 799, 802, 798 ];
@@ -173,28 +167,28 @@ fn insert_many_out_of_order() {
 #[test]
 fn save_and_load() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut blobs = Arc::new(Mutex::new(BlobStore::new(memory_buffer)));
+    let mut blobs = Arc::new(Mutex::new(BlobStore::new(Stream::new())));
     let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
         1000, 1001, 1009, 1002, 46, 18, 19, 20, 21, 22, 23, 24, 25, 2, 9, 8, 7, 6, 5, 3, 800, 801, 799, 802, 798 ];
     
     // Write the list
     {
-        let mut list = Table::<4>::new(blobs.clone());
+        let mut list1 = Table::<4>::new(blobs.clone());
 
-        let view = list.get_view();
+        let view = list1.get_view();
         for value in &expected_values {
             view.insert(*value as u128);
             assert_eq!(*value, view.get(*value));
             assert!(view.get(*value - 1) == *value - 1 || view.get(*value - 1) == *value);
         }
-        list.commit(&view);
+        list1.commit(&view);
     }
+
 
     // Reload the list from storage
     {
-        let mut list = Table::<4>::new(blobs.clone());
-        let view = list.get_view();
+        let mut list2 = Table::<4>::new(blobs.clone());
+        let view = list2.get_view();
         let mut expected_values_sorted = expected_values.to_vec();
         expected_values_sorted.sort();
         assert_expected_values(&expected_values_sorted, &view);

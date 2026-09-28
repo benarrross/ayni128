@@ -23,7 +23,7 @@ fn main() {
         Ok(file) => file,
     };
 
-    let mut memory_buffer = Box::new(Stream::new());
+    let mut memory_buffer = Stream::new();
     let mut blobs = BlobStore::new(memory_buffer);
 
     let blob_contents: [u8;_] = [1, 2, 3];

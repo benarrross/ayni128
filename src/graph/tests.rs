@@ -17,8 +17,7 @@ TO DO
 
 #[test]
 fn create_one_node_and_attribute() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 
@@ -34,8 +33,7 @@ fn create_one_node_and_attribute() {
 
 #[test]
 fn enumerate_several_attributes() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 
@@ -57,8 +55,7 @@ fn enumerate_several_attributes() {
 
 #[test]
 fn enumerate_several_nodes_by_attribute() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 
@@ -87,8 +84,7 @@ fn enumerate_several_nodes_by_attribute() {
 
 #[test]
 fn create_one_child_edge() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 
@@ -123,8 +119,7 @@ fn create_one_child_edge() {
 
 #[test]
 fn create_one_reference_edge() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 
@@ -153,8 +148,7 @@ fn create_one_reference_edge() {
 
 #[test]
 fn enumerate_edges() {
-    let mut memory_buffer = Box::new(Stream::new());
-    let mut graph = Graph::new(memory_buffer);
+    let mut graph = Graph::new(Stream::new());
 
     let view = graph.get_view();
 

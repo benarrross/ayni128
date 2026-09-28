@@ -18,6 +18,12 @@ impl Stream {
         }
     }
 
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        Stream {
+            buffer : Cursor::new(bytes)
+        }
+    }
+
     pub fn as_slice(&self) -> &[u8] {
         self.buffer.get_ref().as_slice()
     }
