@@ -3,20 +3,20 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::BlobId;
 use crate::BlobStore;
-use crate::pslist::editor::create_branch_node;
-use super::node::*;
-use super::nodehandle::*;
-use super::nodelink::*;
-use super::nodemap::*;
+use crate::pslist::editor::create_branch_page;
+use super::page::*;
+use super::pagehandle::*;
+use super::pagelink::*;
+use super::pagemap::*;
 use super::TableView;
 
 
 pub struct Table<const K: usize> {
-    root_node_link: NodeLink<K>,
+    root_page_link: PageLink<K>,
     root_blobid: RefCell<BlobId>,
-    loaded_hnodes: RefCell<HashMap<BlobId, NodeHandle<K>>>,
+    loaded_hpages: RefCell<HashMap<BlobId, PageHandle<K>>>,
     backing_store: Arc<Mutex<BlobStore>>,
-    nodes: Arc<Mutex<NodeMap<K>>>,
+    pages: Arc<Mutex<PageMap<K>>>,
 }
 
 
@@ -25,20 +25,20 @@ impl<'a, const K: usize> Table<K> {
     pub fn new(backing_store: Arc<Mutex<BlobStore>>) -> Self {
 
         // Make a new, empty node for our root, store it, and add it to  our blobs map
-        let root_node = Node::<K>::empty_leaf();
-        let root_id = root_node.store(backing_store.lock().as_mut().unwrap());
+        let root_page = Page::<K>::empty_leaf();
+        let root_id = root_page.store(backing_store.lock().as_mut().unwrap());
 
         // Start off with one node
-        let mut nodes : HashMap<BlobId, NodeHandle<K>> = HashMap::new();
-        let root_node_handle = NodeHandle::new(root_node); 
-        nodes.insert(root_id, root_node_handle.clone());
+        let mut pages : HashMap<BlobId, PageHandle<K>> = HashMap::new();
+        let root_hpage = PageHandle::new(root_page); 
+        pages.insert(root_id, root_hpage.clone());
 
         Table { 
-            root_node_link: NodeLink::<K>::new_loaded(&root_node_handle),
+            root_page_link: PageLink::<K>::new_loaded(&root_hpage),
             root_blobid: RefCell::new(BlobId::new_empty()),
-            loaded_hnodes: RefCell::new(nodes), 
+            loaded_hpages: RefCell::new(pages), 
             backing_store: backing_store,
-            nodes: Arc::new(Mutex::new(NodeMap::new()))
+            pages: Arc::new(Mutex::new(PageMap::new()))
         }
     }
 
@@ -53,7 +53,7 @@ impl<'a, const K: usize> Table<K> {
         // Lock the backing store so we don't commit at the same time
         let backing_store_lock = self.backing_store.lock();
 
-        TableView::new(self, &self.root_node_link)
+        TableView::new(self, &self.root_page_link)
     }
 
 
@@ -67,11 +67,11 @@ impl<'a, const K: usize> Table<K> {
         for value in inserted_values.iter() {
 
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
-            let mutable_root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            match super::editor::insert_and_split(&mut view.get_mutable_node_deprecated(&mutable_root_hnode), *value, view) {
-                SplitResult::Split(right_hnode) => {
-                    let branch_node = create_branch_node(&mutable_root_hnode, right_hnode.clone(), view);
-                    self.root_node_link.set_mutable(&branch_node);
+            let mutable_root_hpage = view.get_mutable_hpage(&self.root_page_link);
+            match super::editor::insert_and_split(&mut view.get_mutable_page_deprecated(&mutable_root_hpage), *value, view) {
+                SplitResult::Split(right_hpage) => {
+                    let branch_page = create_branch_page(&mutable_root_hpage, right_hpage.clone(), view);
+                    self.root_page_link.set_mutable(&branch_page);
                 },
                 SplitResult::NoSplit => {}
             };
@@ -81,11 +81,11 @@ impl<'a, const K: usize> Table<K> {
         // NYI
 
         // Write the edited nodes to storage (if there are any)
-        if self.root_node_link.is_mutable() {
+        if self.root_page_link.is_mutable() {
             // NYI it's strange and wrong that we call view to get the mutable node... need to get it from ourselves
-            let root_hnode = view.get_mutable_hnode(&self.root_node_link);
-            let root_node = view.get_mutable_node_deprecated(&root_hnode);
-            let root_blobid = root_node.store(&mut blob_store);
+            let root_hpage = view.get_mutable_hpage(&self.root_page_link);
+            let root_page = view.get_mutable_page_deprecated(&root_hpage);
+            let root_blobid = root_page.store(&mut blob_store);
 
             // Rewrite the root node link
             // NYI bring back this commented out line
@@ -98,7 +98,7 @@ impl<'a, const K: usize> Table<K> {
     }
 
 
-    pub(super) fn load(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn load(&self, node_link: &PageLink<K>) -> PageHandle<K> {
         unimplemented!()
     }
 }

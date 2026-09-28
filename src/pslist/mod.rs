@@ -1,9 +1,9 @@
 mod table;
 mod editor;
-mod node;
-mod nodehandle;
-mod nodelink;
-mod nodemap;
+mod page;
+mod pagehandle;
+mod pagelink;
+mod pagemap;
 mod view;
 
 pub use table::*;

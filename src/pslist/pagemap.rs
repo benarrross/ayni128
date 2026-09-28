@@ -1,19 +1,18 @@
 use std::collections::HashMap;
 use crate::BlobId;
-use super::node::*;
-use super::nodehandle::*;
+use super::page::*;
+use super::pagehandle::*;
 
 
-// NYI rename to PageMap
-pub(super) struct NodeMap<const K: usize> {
+pub(super) struct PageMap<const K: usize> {
     // NYI change u32 to NodeId at some point
-    map: HashMap<u32, (BlobId, Node<K>)>
+    map: HashMap<u32, (BlobId, Page<K>)>
 }
 
 
-impl<const K: usize> NodeMap<K> {
+impl<const K: usize> PageMap<K> {
     pub fn new() -> Self {
-        NodeMap {
+        PageMap {
             map: HashMap::new()
         }
     }
@@ -23,13 +22,13 @@ impl<const K: usize> NodeMap<K> {
     }
 
 
-    pub fn insert(&mut self, blobid: BlobId, node: Node<K>) -> u32 {
+    pub fn insert(&mut self, blobid: BlobId, node: Page<K>) -> u32 {
         let id = self.alloc_id();
         self.map.insert(id, (blobid, node));
         id
     }
 
-    pub fn get(&self, nodeid: u32) -> &Node<K> {
+    pub fn get(&self, nodeid: u32) -> &Page<K> {
         match (self.map.get(&nodeid).map(|t| {&t.1})) {
             Some(node) => node,
             None => panic!("Asked for a page that doesn't exist")

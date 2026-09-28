@@ -3,14 +3,14 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use crate::sortedarray::*;
 use super::table::*;
 use super::editor::*;
-use super::node::*;
-use super::nodehandle::*;
-use super::nodelink::*;
+use super::page::*;
+use super::pagehandle::*;
+use super::pagelink::*;
 
 
 pub struct TableView<'a, const K: usize> {
     based_on: &'a Table<K>,
-    root_node_link: RefCell<NodeLink<K>>,
+    root_page_link: RefCell<PageLink<K>>,
     pub(super) puts: RefCell<SortedArray<u128>>,
     pub(super) deletes: RefCell<SortedArray<u128>>
 }
@@ -20,10 +20,10 @@ impl<'a, const K: usize> TableView<'a, K> {
 
     /// Creates a new read/write view on the B+tree. Each view should only be used by one thread.
     /// You must commit the view for your changes to be saved.
-    pub(super) fn new(based_on: &'a Table<K>, root_node_link: &NodeLink<K>) -> Self {
+    pub(super) fn new(based_on: &'a Table<K>, root_page_link: &PageLink<K>) -> Self {
         TableView { 
             based_on: based_on,
-            root_node_link: RefCell::new(root_node_link.clone()),
+            root_page_link: RefCell::new(root_page_link.clone()),
             puts: RefCell::new(SortedArray::new()),
             deletes: RefCell::new(SortedArray::new())
         }
@@ -33,35 +33,35 @@ impl<'a, const K: usize> TableView<'a, K> {
     /// Gets the next value greater than or equal to the specified value.
     /// NYI this needs the same logic as the enumerator to go to the next leaf node
     pub fn get(&self, value : u128) -> u128 {
-        let hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_from_node(&self.get_node_deprecated(&hnode), value)
+        let hnode = self.get_immutable_hpage(&self.root_page_link.borrow());
+        self.get_from_page(&self.get_page_deprecated(&hnode), value)
     }
 
-
-    fn get_from_node(&self, node: &Node<K>, value: u128) -> u128 {
-        if (node.is_leaf()) {
-            let value_in_node = node.values.find(value, u128::MAX);
+    // NYI should this be a method on Page?
+    fn get_from_page(&self, page: &Page<K>, value: u128) -> u128 {
+        if (page.is_leaf()) {
+            let value_in_node = page.values.find(value, u128::MAX);
             if (value_in_node < u128::MAX) {
                 value_in_node
             } else {
-                match self.get_next_leaf_from_node(node) {
-                    Some(hnode_next) => self.get_node_deprecated(&hnode_next).values[0],
+                match self.get_next_leaf_from_node(page) {
+                    Some(hnode_next) => self.get_page_deprecated(&hnode_next).values[0],
                     None => u128::MAX
                 }
             }
         }
         else {
-            let index = node.values.find_range_index(value);
-            let child_hnode = node.get_immutable_child_hnode(index, self);
-            self.get_from_node(&self.get_node_deprecated(&child_hnode), value)
+            let index = page.values.find_range_index(value);
+            let child_hnode = page.get_immutable_child_hnode(index, self);
+            self.get_from_page(&self.get_page_deprecated(&child_hnode), value)
         }
     }
 
 
     /// Creates an iterator for the view over a given range of values in the B+tree view.
     pub fn iter(&'a self, min: u128, mac: u128) -> TableIterator<'a, K> {
-        let root_hnode = self.get_immutable_hnode(&self.root_node_link.borrow());
-        TableIterator::new(self, root_hnode, min, mac)
+        let root_hpage = self.get_immutable_hpage(&self.root_page_link.borrow());
+        TableIterator::new(self, root_hpage, min, mac)
     }   
 
 
@@ -78,20 +78,21 @@ impl<'a, const K: usize> TableView<'a, K> {
         };
 
         // Update our b+tree and store the new root if necessary
-        let mutable_root_hnode = self.get_mutable_hnode(&self.root_node_link.borrow());
-        if let SplitResult::Split(right_hnode) = insert_and_split(&mut &mut self.get_mutable_node_deprecated(&mutable_root_hnode), value, self) {
-           *self.root_node_link.borrow_mut() = NodeLink::new_mutable(
-                &create_branch_node(&mutable_root_hnode, right_hnode.clone(), self));
+        let mutable_root_hpage = self.get_mutable_hpage(&self.root_page_link.borrow());
+        if let SplitResult::Split(right_hnode) = 
+        insert_and_split(&mut &mut self.get_mutable_page_deprecated(&mutable_root_hpage), value, self) {
+           *self.root_page_link.borrow_mut() = PageLink::new_mutable(
+                &create_branch_page(&mutable_root_hpage, right_hnode.clone(), self));
         }
 
         self.check();
     }
 
-    pub(super) fn get_next_nodeid(&'a self) -> u32 {
+    pub(super) fn get_next_pageid(&'a self) -> u32 {
         unimplemented!();
     }
 
-    pub(super) fn get_node_deprecated(&'a self, id: &'a NodeHandle<K>) -> Ref<'a, Node<K>> {
+    pub(super) fn get_page_deprecated(&'a self, id: &'a PageHandle<K>) -> Ref<'a, Page<K>> {
         id.read_lock_deprecated()
     }
 
@@ -102,85 +103,85 @@ impl<'a, const K: usize> TableView<'a, K> {
 //     }
 
 
-    pub(super) fn get_mutable_node_deprecated(&'a self, id: &'a NodeHandle<K>) -> RefMut<'a, Node<K>> {
+    pub(super) fn get_mutable_page_deprecated(&'a self, id: &'a PageHandle<K>) -> RefMut<'a, Page<K>> {
         id.write_lock_deprecated()
     }
 
 
     pub(super) fn check(&self) {
-        let root_node = self.get_immutable_hnode(&self.root_node_link.borrow());
-        self.get_node_deprecated(&root_node).check(self);
+        let root_page = self.get_immutable_hpage(&self.root_page_link.borrow());
+        self.get_page_deprecated(&root_page).check(self);
 
     }
 
 
-    pub(super) fn get_immutable_hnode(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
-        let mut new_inner = NodeLinkKind::Empty;
+    pub(super) fn get_immutable_hpage(&self, page_link: &PageLink<K>) -> PageHandle<K> {
+        let mut new_inner = PageLinkKind::Empty;
 
-        let loaded_hnode = match &*node_link.inner.read().unwrap() {
-            NodeLinkKind::Unloaded(id) => {
-                let hnode = self.based_on.load(&node_link);
-                new_inner = NodeLinkKind::Mutable(hnode.clone());
-                hnode
+        let loaded_hpage = match &*page_link.inner.read().unwrap() {
+            PageLinkKind::Unloaded(id) => {
+                let hpage = self.based_on.load(&page_link);
+                new_inner = PageLinkKind::Mutable(hpage.clone());
+                hpage
             },
-            NodeLinkKind::Loaded(hnode) => hnode.clone(),
-            NodeLinkKind::Mutable(hnode) => hnode.clone(),
-            NodeLinkKind::Empty => panic!("Can't get an empty node link")
+            PageLinkKind::Loaded(hpage) => hpage.clone(),
+            PageLinkKind::Mutable(hpage) => hpage.clone(),
+            PageLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if !matches!(&new_inner, NodeLinkKind::Empty) {
-            *node_link.inner.write().unwrap() = new_inner;
+        if !matches!(&new_inner, PageLinkKind::Empty) {
+            *page_link.inner.write().unwrap() = new_inner;
         }
 
-        loaded_hnode
+        loaded_hpage
     }
 
     
     /// Gets a mutable node handle from a link, loading the node from storage if necessary.
     /// This should ONLY be used by views when editing the tree.
-    pub(super) fn get_mutable_hnode(&self, node_link: &NodeLink<K>) -> NodeHandle<K> {
+    pub(super) fn get_mutable_hpage(&self, page_link: &PageLink<K>) -> PageHandle<K> {
 
-        let mut new_inner = NodeLinkKind::Empty;
+        let mut new_inner = PageLinkKind::Empty;
 
-        let loaded_hnode = match &*node_link.inner.read().unwrap() {
-            NodeLinkKind::Unloaded(id) => {
-                let loaded_hnode = self.based_on.load(&node_link);
-                let mutable_node = self.get_node_deprecated(&loaded_hnode).clone();
-                let mutable_hnode = NodeHandle::new(mutable_node);
-                new_inner = NodeLinkKind::Mutable(mutable_hnode.clone());
-                mutable_hnode
+        let loaded_hpage = match &*page_link.inner.read().unwrap() {
+            PageLinkKind::Unloaded(id) => {
+                let loaded_hpage = self.based_on.load(&page_link);
+                let mutable_page = self.get_page_deprecated(&loaded_hpage).clone();
+                let mutable_hpage = PageHandle::new(mutable_page);
+                new_inner = PageLinkKind::Mutable(mutable_hpage.clone());
+                mutable_hpage
             },
-            NodeLinkKind::Loaded(hnode) => {
-                let node = self.get_node_deprecated(&hnode).clone();
-                let hnode = NodeHandle::new(node);
-                new_inner = NodeLinkKind::Mutable(hnode.clone());
-                hnode
+            PageLinkKind::Loaded(hpage) => {
+                let page = self.get_page_deprecated(&hpage).clone();
+                let hpage = PageHandle::new(page);
+                new_inner = PageLinkKind::Mutable(hpage.clone());
+                hpage
             },
-            NodeLinkKind::Mutable(hnode) => hnode.clone(),
-            NodeLinkKind::Empty => panic!("Can't get an empty node link")
+            PageLinkKind::Mutable(hpage) => hpage.clone(),
+            PageLinkKind::Empty => panic!("Can't get an empty node link")
         };
 
-        if !matches!(&new_inner, NodeLinkKind::Empty) {
+        if !matches!(&new_inner, PageLinkKind::Empty) {
             // NYI need to make sure nobody else set this between the release of the read lock and
             // aquisition of the write lock
-            *node_link.inner.write().unwrap() = new_inner;
+            *page_link.inner.write().unwrap() = new_inner;
         }
         
-        loaded_hnode
+        loaded_hpage
     }
 
 
     /// Given a handle to a node, returns a handle to the next leaf node after it if there is one.
-    pub(super) fn get_next_leaf_from_hnode(&self, hnode: &NodeHandle<K>) -> Option<NodeHandle<K>> {
-        self.get_next_leaf_from_node(&self.get_node_deprecated(&hnode))
+    pub(super) fn get_next_leaf_from_hnode(&self, hnode: &PageHandle<K>) -> Option<PageHandle<K>> {
+        self.get_next_leaf_from_node(&self.get_page_deprecated(&hnode))
     }
 
 
-    pub(super) fn get_next_leaf_from_node(&self, node: &Node<K>) -> Option<NodeHandle<K>> {
+    pub(super) fn get_next_leaf_from_node(&self, node: &Page<K>) -> Option<PageHandle<K>> {
         if node.next_link.is_empty() {
             Option::None
         } else {
-            Option::Some(self.get_immutable_hnode(&node.next_link))
+            Option::Some(self.get_immutable_hpage(&node.next_link))
         }
     }
 }
@@ -188,17 +189,17 @@ impl<'a, const K: usize> TableView<'a, K> {
 
 pub struct TableIterator<'a, const K: usize> {
     view: &'a TableView<'a, K>,
-    root_hnode: NodeHandle<K>,
+    root_hnode: PageHandle<K>,
     min: u128,
     mac: u128,
-    hnode: Option<NodeHandle<K>>,
+    hnode: Option<PageHandle<K>>,
     index: usize
 }
 
 
 impl<'a, const K: usize> TableIterator<'a,  K> {
 
-    pub(super) fn new(view: &'a TableView<'a, K>, root_node: NodeHandle<K>, min: u128, mac: u128) -> Self {
+    pub(super) fn new(view: &'a TableView<'a, K>, root_node: PageHandle<K>, min: u128, mac: u128) -> Self {
         TableIterator { 
             view, 
             root_hnode: root_node.clone(), 
@@ -215,7 +216,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut hnode = self.root_hnode.clone();
         loop {
             let hnode_cur = hnode.clone();
-            let node = self.view.get_node_deprecated(&hnode_cur);
+            let node = self.view.get_page_deprecated(&hnode_cur);
             if (node.is_leaf()) {
                 break;
             }
@@ -229,7 +230,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         let mut go_to_next_leaf = false;
         let mut index = 0;
         {
-            let leaf_node = self.view.get_node_deprecated(&hnode);
+            let leaf_node = self.view.get_page_deprecated(&hnode);
             index = leaf_node.values.find_index(self.min);
             if (index >= leaf_node.values.len()) {
                 go_to_next_leaf = true;
@@ -248,7 +249,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.index = index;
 
         // We could be enumerating an empty list
-        let node = self.view.get_node_deprecated(&hnode);
+        let node = self.view.get_page_deprecated(&hnode);
         if index >= node.values.len() || node.values[index] >= self.mac {
             Option::None
         } else {
@@ -266,7 +267,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         // Advance to the next leaf node if necessary
         let mut go_to_next_leaf = false;
         {
-            let node = self.view.get_node_deprecated(&hnode);
+            let node = self.view.get_page_deprecated(&hnode);
             if index >= node.values.len() {
                 go_to_next_leaf = true;
             }
@@ -282,7 +283,7 @@ impl<'a, const K: usize> TableIterator<'a,  K> {
         self.hnode = Some(hnode.clone());
         self.index = index;
 
-        let node = self.view.get_node_deprecated(&hnode);
+        let node = self.view.get_page_deprecated(&hnode);
         if self.index >= node.values.len() || node.values[self.index] >= self.mac {
             Option::None
         } else {

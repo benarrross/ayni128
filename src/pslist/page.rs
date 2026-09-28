@@ -4,12 +4,12 @@ use crate::blobstore::*;
 use crate::sortedarray::*;
 use crate::Table;
 use crate::TableView;
-use super::nodehandle::*;
-use super::nodelink::*;
+use super::pagehandle::*;
+use super::pagelink::*;
 
 
 pub enum SplitResult<const K:usize> {
-    Split(NodeHandle<K>),
+    Split(PageHandle<K>),
     NoSplit
 }
 
@@ -19,19 +19,19 @@ static NEXT_NODE_DEBUG_ID: AtomicUsize  = AtomicUsize::new(1);
 
 
 #[derive(Debug)]
-pub(super) struct Node<const K: usize> {
+pub(super) struct Page<const K: usize> {
     pub debug_id: usize,
     pub blobid : Option<BlobId>,
     pub values : SortedArray<u128>,
-    pub children: Option<Vec<NodeLink<K>>>,
-    pub next_link : NodeLink<K>
+    pub children: Option<Vec<PageLink<K>>>,
+    pub next_link : PageLink<K>
 }
 
 
 // NYI probably don't need this anymore once we are using NodeLinkOuter everywhere
-impl<const K: usize> Clone for Node<K> {
+impl<const K: usize> Clone for Page<K> {
     fn clone(&self) -> Self {
-        Node {
+        Page {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             blobid: self.blobid.clone(),
             values: self.values.clone(),
@@ -42,21 +42,21 @@ impl<const K: usize> Clone for Node<K> {
 }
 
 
-impl<const K: usize> Node<K> {  
+impl<const K: usize> Page<K> {  
 
     pub fn empty_leaf() -> Self {
-        Node {
+        Page {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             blobid: None,
             values: SortedArray::new(),
             children: None,
-            next_link: NodeLink::new_empty() 
+            next_link: PageLink::new_empty() 
         }
     }
 
 
-    pub fn new_leaf(values: SortedArray<u128>, next: NodeLink<K>) -> Self {
-        Node {
+    pub fn new_leaf(values: SortedArray<u128>, next: PageLink<K>) -> Self {
+        Page {
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             blobid: None,
             values: values,
@@ -66,13 +66,13 @@ impl<const K: usize> Node<K> {
     }
 
 
-    pub fn new_branch(values: SortedArray<u128>, children: Vec<NodeLink<K>>) -> Self {
-        Node { 
+    pub fn new_branch(values: SortedArray<u128>, children: Vec<PageLink<K>>) -> Self {
+        Page { 
             debug_id: NEXT_NODE_DEBUG_ID.fetch_add(1, Ordering::Relaxed),
             blobid: None,
             values: values,
             children: Some(children),
-            next_link: NodeLink::new_empty() 
+            next_link: PageLink::new_empty() 
         }
     }   
 
@@ -123,21 +123,21 @@ impl<const K: usize> Node<K> {
         }
         else {
             let first_child_hnode = self.get_immutable_child_hnode(0, view);
-            let first_child_node = view.get_node_deprecated(&first_child_hnode);
+            let first_child_node = view.get_page_deprecated(&first_child_hnode);
             first_child_node.first_value( view)
         }
     }
 
 
-    pub(super) fn get_immutable_child_hnode<'a>(&self, index: usize, view: &TableView<'a, K>) -> NodeHandle<K> {
+    pub(super) fn get_immutable_child_hnode<'a>(&self, index: usize, view: &TableView<'a, K>) -> PageHandle<K> {
         let link = self.children.as_ref().unwrap()[index].clone();
-        view.get_immutable_hnode(&link)
+        view.get_immutable_hpage(&link)
     }
 
 
-    pub(super) fn get_mutable_child_hnode<'a>(&self, index: usize, view: &TableView<'a, K>) -> NodeHandle<K> {
+    pub(super) fn get_mutable_child_hpage<'a>(&self, index: usize, view: &TableView<'a, K>) -> PageHandle<K> {
         let link = self.children.as_ref().unwrap()[index].clone();
-        view.get_mutable_hnode(&link)
+        view.get_mutable_hpage(&link)
     }
 
 
@@ -166,11 +166,11 @@ impl<const K: usize> Node<K> {
                 let value = self.values[index];
 
                 let child_hnode_before = self.get_immutable_child_hnode(index, view);
-                let child_node_before = view.get_node_deprecated(&child_hnode_before);
+                let child_node_before = view.get_page_deprecated(&child_hnode_before);
                 assert(value > child_node_before.values[child_node_before.values.len()-1]);
 
                 let child_hnode_after = self.get_immutable_child_hnode(index+1, view);
-                let child_node_after = view.get_node_deprecated(&child_hnode_after);
+                let child_node_after = view.get_page_deprecated(&child_hnode_after);
                 assert(value == child_node_after.first_value(view));
                 let x =  child_node_after.values[0];
                 assert(value <= child_node_after.values[0]);
@@ -178,7 +178,7 @@ impl<const K: usize> Node<K> {
 
             for index in 0..self.children.as_ref().unwrap().len() {
                 let child_hnode = self.get_immutable_child_hnode(index, view);
-                let child_node = view.get_node_deprecated(&child_hnode);
+                let child_node = view.get_page_deprecated(&child_hnode);
                 child_node.check(view);
             }
         }
