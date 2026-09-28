@@ -1,4 +1,5 @@
 use std::cell::*;
+use std::sync::{Arc, Mutex, MutexGuard};
 use crate::sortedarray::*;
 use super::table::*;
 use super::editor::*;
@@ -95,10 +96,10 @@ impl<'a, const K: usize> TableView<'a, K> {
     }
 
 
-    // pub(super) fn get_node_new(&'a self, nodeid: u32) -> &Node<K> {
-    //     let nodemap = self.based_on.nodes.lock().unwrap();
-    //     nodemap.get(nodeid)
-    // }
+//     pub(super) fn get_node_new(&'a self, nodeid: u32) -> MutexGuard<'_, Node<K>> {
+//         unimplemented!();
+// //        self.based_on.nodes.lock().unwrap().get(nodeid)
+//     }
 
 
     pub(super) fn get_mutable_node_deprecated(&'a self, id: &'a NodeHandle<K>) -> RefMut<'a, Node<K>> {
