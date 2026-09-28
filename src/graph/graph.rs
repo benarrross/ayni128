@@ -34,7 +34,7 @@ pub struct Graph {
 
 
 impl Graph {
-    pub fn new(mut backing_store: Box<dyn Stream>) -> Self {
+    pub fn new(mut backing_store: Box<Stream>) -> Self {
 
         let blob_store = Arc::new(Mutex::new(BlobStore::new(backing_store)));
         let mut strings = StringTable::new(blob_store.clone());
@@ -56,7 +56,7 @@ impl Graph {
     }
 
 
-    pub fn new_from_stream(mut backing_store: Box<dyn crate::blobstore::Stream>) -> Self {
+    pub fn new_from_stream(mut backing_store: Box<crate::blobstore::Stream>) -> Self {
         unimplemented!();
     }
 

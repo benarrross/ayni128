@@ -33,7 +33,7 @@ impl FileHeader {
         Self::new(BlobId::new(NonZeroU64::MAX))
     }
 
-    pub fn read(backing_store : &mut dyn Stream) -> FileHeader {
+    pub fn read(backing_store : &mut Stream) -> FileHeader {
 
         let magic_number = backing_store.read_u64();
         let file_format_version = backing_store.read_u32();
@@ -54,7 +54,7 @@ impl FileHeader {
         }
     }
 
-    pub fn serialize(&self, backing_store : &mut dyn Stream) {
+    pub fn serialize(&self, backing_store : &mut Stream) {
         backing_store.write_all(&self.magic_number.to_le_bytes());
         backing_store.write_all(&self.file_format_version.to_le_bytes());
         backing_store.write_all(&self.header_size.to_le_bytes());

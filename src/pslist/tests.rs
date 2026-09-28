@@ -19,7 +19,7 @@ TESTS TO ADD
 
 #[test]
 fn create_empty() {
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 }
@@ -27,7 +27,7 @@ fn create_empty() {
 
 #[test]
 fn enum_empty() {
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
@@ -41,7 +41,7 @@ fn enum_empty() {
 
 #[test]
 fn insert_one() {
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
 
@@ -71,7 +71,7 @@ fn insert_one() {
 
 #[test]
 fn insert_several() {
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let expected_values = vec![10, 32, 99, 999];
@@ -110,7 +110,7 @@ fn insert_several() {
 #[test]
 fn insert_many_in_order() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let mut inserted_count = 0;
@@ -147,7 +147,7 @@ fn insert_many_in_order() {
 #[test]
 fn insert_many_out_of_order() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = BlobStore::new(memory_buffer);
     let mut list = Table::<4>::new(Arc::new(Mutex::new(blobs)));
     let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
@@ -173,7 +173,7 @@ fn insert_many_out_of_order() {
 #[test]
 fn save_and_load() {
     const K:usize = 4;
-    let mut memory_buffer = Box::new(MemoryStream::new());
+    let mut memory_buffer = Box::new(Stream::new());
     let mut blobs = Arc::new(Mutex::new(BlobStore::new(memory_buffer)));
     let expected_values : Vec<u128> = vec![10, 32, 99, 4, 16, 45, 12, 10000, 0xFFFFFFFFFFFF, 999, 1, 88, 
         1000, 1001, 1009, 1002, 46, 18, 19, 20, 21, 22, 23, 24, 25, 2, 9, 8, 7, 6, 5, 3, 800, 801, 799, 802, 798 ];

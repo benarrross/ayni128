@@ -17,13 +17,13 @@ TO DO
 
 
 pub struct BlobStore {
-    backing_store : Box<dyn Stream>
+    backing_store : Box<Stream>
 }
 
 
 impl BlobStore {
 
-    pub fn new (mut backing_store : Box<dyn Stream>) -> Self {
+    pub fn new (mut backing_store : Box<Stream>) -> Self {
 
         // Figure out if we need to initialize a new blob store
         let file_length = backing_store.seek(SeekFrom::End(0)).unwrap();

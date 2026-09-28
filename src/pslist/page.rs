@@ -79,7 +79,7 @@ impl<const K: usize> Page<K> {
 
     pub fn store(&self, backing_store: &mut BlobStore) -> BlobId {
         
-        let mut serialized_node = MemoryStream::new();
+        let mut serialized_node = Stream::new();
 
         // Serialize each of our child nodes
         // NYI
